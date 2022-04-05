@@ -182,6 +182,7 @@ static void fv_gather_rimgs_for_one_fv(EFI_FIRMWARE_VOLUME2_PROTOCOL *fv)
 		fv_gather_rimgs_for_one_file(fv, &guid);
 	}
 	FreePool(key);
+	conf_slow_step_pause();
 }
 
 void fv_init(void)

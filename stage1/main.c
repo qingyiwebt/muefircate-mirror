@@ -46,6 +46,7 @@ static uint16_t temp_ebda_seg = 0;
 
 static void init(void)
 {
+	conf_init();
 	bmem_init();
 	fv_init();
 }
@@ -402,39 +403,6 @@ static void fake_mp_table(void)
 }
 #endif
 
-static void get_time(EFI_TIME *when)
-{
-	EFI_STATUS status = RT->GetTime(when, NULL);
-	if (EFI_ERROR(status))
-		error_with_status(u"cannot get time", status);
-}
-
-static void wait_for_time_change(void)
-{
-	EFI_TIME then, now;
-	get_time(&then);
-	do {
-		hlt();
-		get_time(&now);
-	} while (now.Second == then.Second &&
-		 now.Nanosecond == then.Nanosecond);
-}
-
-static void wait_for_one_second(void)
-{
-	EFI_TIME then, now;
-	UINT64 then_ns, now_ns;
-	get_time(&then);
-	then_ns = 1000000000ULL * then.Second + then.Nanosecond;
-	do {
-		hlt();
-		get_time(&now);
-		now_ns = 1000000000ULL * now.Second + now.Nanosecond;
-		if (now.Minute != then.Minute)
-			now_ns += 60000000000ULL;
-	} while (now_ns < then_ns + 1000000000ULL);
-}
-
 static unsigned prepare_to_hand_over(EFI_HANDLE image_handle)
 {
 	enum { EfiPersistentMemory = EfiPalCode + 1 };
@@ -493,11 +461,10 @@ static unsigned prepare_to_hand_over(EFI_HANDLE image_handle)
 	    &boottime_bmem_bot, &runtime_bmem_top);
 	bd->boottime_bmem_bot_seg = addr_to_rm_seg(boottime_bmem_bot);
 	bd->runtime_bmem_top_seg = addr_to_rm_seg(runtime_bmem_top);
+	/* Wrap up any other stuff. */
+	conf_fini();
 	/* Wait for about 3 seconds. */
-	wait_for_time_change();
-	wait_for_one_second();
-	wait_for_one_second();
-	wait_for_one_second();
+	sleepx(3, NULL);
 	/* Really exit boot services... */
 	status = BS->ExitBootServices(image_handle, map_key);
 	if (EFI_ERROR(status))

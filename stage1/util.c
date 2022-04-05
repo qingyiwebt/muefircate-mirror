@@ -30,6 +30,45 @@
 #include <string.h>
 #include "stage1/stage1.h"
 
+static void get_time(EFI_TIME *when)
+{
+	EFI_STATUS status = RT->GetTime(when, NULL);
+	if (EFI_ERROR(status))
+		error_with_status(u"cannot get time", status);
+}
+
+static bool wait_for_time_change(volatile bool *p_signalled)
+{
+	EFI_TIME then, now;
+	get_time(&then);
+	do {
+		hlt();
+		if (p_signalled && *p_signalled)
+			return true;
+		get_time(&now);
+	} while (now.Second == then.Second &&
+		 now.Nanosecond == then.Nanosecond);
+	return p_signalled && *p_signalled;
+}
+
+static bool wait_for_one_second(volatile bool *p_signalled)
+{
+	EFI_TIME then, now;
+	UINT64 then_ns, now_ns;
+	get_time(&then);
+	then_ns = 1000000000ULL * then.Second + then.Nanosecond;
+	do {
+		hlt();
+		if (p_signalled && *p_signalled)
+			return true;
+		get_time(&now);
+		now_ns = 1000000000ULL * now.Second + now.Nanosecond;
+		if (now.Minute != then.Minute)
+			now_ns += 60000000000ULL;
+	} while (now_ns < then_ns + 1000000000ULL);
+	return p_signalled && *p_signalled;
+}
+
 int memcmp(const void *s1, const void *s2, size_t n)
 {
 	const unsigned char *p1 = s1, *p2 = s2;
@@ -105,4 +144,14 @@ void update_cksum(uint8_t *buf, size_t n, uint8_t *p_cksum)
 	*p_cksum = 0;  /* the checksum may be part of the summed area */
 	cksum = compute_cksum(buf, n);
 	*p_cksum = cksum;
+}
+
+bool sleepx(unsigned seconds, volatile bool *p_signalled)
+{
+	if (wait_for_time_change(p_signalled))
+		return true;
+	while (seconds-- != 0)
+		if (wait_for_one_second(p_signalled))
+			return true;
+	return false;
 }

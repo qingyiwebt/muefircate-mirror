@@ -354,6 +354,8 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 	}
 	if (got_bar)
 		Output(u"\r\n");
+	if (vga)
+		conf_slow_step_pause();
 	return vga;
 }
 

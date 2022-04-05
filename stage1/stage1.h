@@ -60,6 +60,12 @@ extern bdat_mem_range_t *bparm_add_mem_range(uint64_t, uint64_t,
     uint32_t, uint32_t, uint64_t);
 extern bparm_t *bparm_get(void);
 
+/* conf.c functions. */
+
+extern void conf_init(void);
+extern void conf_slow_step_pause(void);
+extern void conf_fini(void);
+
 /* fv.c functions. */
 
 extern void fv_init(void);
@@ -76,6 +82,7 @@ extern void print_guid(const EFI_GUID *);
 extern EFI_MEMORY_DESCRIPTOR *get_mem_map(UINTN *, UINTN *, UINTN *);
 extern uint8_t compute_cksum(const void *, size_t);
 extern void update_cksum(uint8_t *, size_t, uint8_t *);
+extern bool sleepx(unsigned, volatile bool *);
 
 /* pci.h functions. */
 
