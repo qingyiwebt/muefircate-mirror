@@ -40,10 +40,7 @@ static bool enable_legacy_vga(EFI_PCI_IO_PROTOCOL *io, UINT32 class_if,
 	*p_enables = 0;
 	switch (class_if & 0xffff0000UL) {
 	    case 0x03000000:  /* VGA */
-		Output(u" VGA");
-		break;
 	    case 0x03010000:  /* XGA */
-		Output(u" XGA");
 		break;
 	    default:
 		return false;
@@ -155,7 +152,7 @@ static void get_rimg(bdat_pci_dev_t *bd, const void *rimg, uint32_t sz,
 	void *rimg_copy, *rimg_rt;
 	bd->rimg_sz = sz;
 	if (!pcir) {
-		Print(u"    ROM img.: @0x%lx~@0x%lx (no PCIR!)\r\n",
+		infof(u"    ROM img.: @0x%lx~@0x%lx (no PCIR!)\r\n",
 		    rimg, (char *)rimg + sz - 1);
 		bd->rimg_seg = bd->rimg_rt_seg = ptr_to_rm_seg(rimg);
 	} else if (pcir->pcir_rev >= 3) {
@@ -164,14 +161,14 @@ static void get_rimg(bdat_pci_dev_t *bd, const void *rimg, uint32_t sz,
 			if ((uintptr_t)rimg <= BMEM_MAX_ADDR - sz &&
 			    (uintptr_t)rimg % HKIBYTE == 0)
 			{
-				Print(u"    ROM img.: @0x%lx~@0x%lx\r\n",
+				infof(u"    ROM img.: @0x%lx~@0x%lx\r\n",
 				    rimg, (char *)rimg + sz - 1);
 				bd->rimg_seg = ptr_to_rm_seg(rimg);
 				bd->rimg_sz = sz;
 			} else {
 				rimg_copy = bmem_alloc_boottime(sz, HKIBYTE);
 				memcpy(rimg_copy, rimg, sz);
-				Print(u"    ROM img.: @0x%lx~@0x%lx "
+				infof(u"    ROM img.: @0x%lx~@0x%lx "
 					   "(copied from @0x%lx)",
 				    rimg_copy, (char *)rimg_copy + sz - 1,
 				    rimg);
@@ -179,7 +176,7 @@ static void get_rimg(bdat_pci_dev_t *bd, const void *rimg, uint32_t sz,
 			}
 			/* FIXME: should run time addr. be 2 KiB aligned? */
 			rimg_rt = bmem_alloc(rt_sz, HKIBYTE);
-			Print(u"  run time: @0x%lx\r\n", rimg_rt);
+			infof(u"  run time: @0x%lx\r\n", rimg_rt);
 			bd->rimg_rt_seg = ptr_to_rm_seg(rimg_rt);
 			return;
 		}
@@ -187,7 +184,7 @@ static void get_rimg(bdat_pci_dev_t *bd, const void *rimg, uint32_t sz,
 	}
 	rimg_copy = bmem_alloc(sz, 2 * KIBYTE);
 	memcpy(rimg_copy, rimg, sz);
-	Print(u"    ROM img.: @0x%lx~@0x%lx (copied from @0x%lx)\r\n",
+	infof(u"    ROM img.: @0x%lx~@0x%lx (copied from @0x%lx)\r\n",
 	    rimg_copy, (char *)rimg_copy + sz - 1, rimg);
 	bd->rimg_seg = bd->rimg_rt_seg = ptr_to_rm_seg(rimg_copy);
 }
@@ -205,7 +202,7 @@ static void get_rimg_from_pci_io(bdat_pci_dev_t *bd, EFI_PCI_IO_PROTOCOL *io)
 	if (!pcir)
 		return;
 	if (pcir->type != PCIR_TYP_PCAT) {
-		Print(u"    ROM img. via EFI_PCI_IO_PROTOCOL not "
+		infof(u"    ROM img. via EFI_PCI_IO_PROTOCOL not "
 			   "PC-AT compatible\r\n");
 		return;
 	}
@@ -268,7 +265,7 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 		error_with_status(u"cannot read PCI conf. sp.", status);
 	pci_id = pci_conf[0];
 	class_if = pci_conf[2] & 0xffffff00U;
-	Print(u"  %04x:%02x:%02x.%x %04x:%04x %02x %02x %02x 0x%06lx%c "
+	infof(u"  %04x:%02x:%02x.%x %04x:%04x %02x %02x %02x 0x%06lx%c "
 		 "0x%06lx%c 0x%06lx%c",
 	    seg, bus, dev, fn,
 	    (UINT32)pci_id_vendor(pci_id), (UINT32)pci_id_dev(pci_id),
@@ -280,34 +277,41 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 	    supports & ~0xffffffULL ? u'+' : u' ',
 	    attrs & 0xffffffULL,
 	    attrs & ~0xffffffULL ? u'+' : u' ');
-	/* Skip further processing if this is not a general device. */
-	if ((pci_conf[3] >> 8 & 0xff) != 0) {
-		Output(u"\r\n");
-		return false;
+	switch (class_if & 0xffff0000UL) {
+	    case 0x03000000:  /* VGA */
+		info(u" VGA");
+		break;
+	    case 0x03010000:  /* XGA */
+		info(u" XGA");
 	}
+	info(u"\r\n");
+	/* Skip further processing if this is not a general device. */
+	if ((pci_conf[3] >> 8 & 0xff) != 0)
+		return false;
 	/* Add a boot parameter for this PCI device. */
 	bd = bparm_add(BP_PCID, sizeof(bdat_pci_dev_t));
 	bd->pci_locn = seg << 16 | bus << 8 | dev << 3 | fn;
 	bd->pci_id = pci_id;
 	bd->class_if = class_if;
-	/*
-	 * If this is a VGA or XGA display controller, try to enable the
-	 * legacy memory & I/O port locations for the controller.  Also
-	 * remember the device's location.
-	 */
-	if (try_enable_vga &&
-	    enable_legacy_vga(io, class_if, attrs, supports, &enables)) {
-		vga = bd;
-		attrs |= enables;
-		Print(u" -> 0x%lx%c", attrs & 0xffffffULL,
-		    attrs & ~0xffffffULL ? u'+' : u' ');
-	}
-	Output(u"\r\n");
 	get_rimg_from_pci_io(bd, io);
 	if (!bd->rimg_seg) {
 		get_rimg_from_fvs(bd);
 		if (!bd->rimg_seg)
 			get_rimg_special_case(bd);
+	}
+	/*
+	 * If this is a VGA or XGA display controller, & there is an option
+	 * ROM for it, try to enable the legacy memory & I/O port locations
+	 * for the controller.
+	 */
+	if (bd->rimg_seg) {
+		if (try_enable_vga &&
+		    enable_legacy_vga(io, class_if, attrs, supports, &enables))
+		{
+			vga = bd;
+			attrs |= enables;
+			infof(u"    attrs. now 0x%lx\r\n", attrs);
+		}
 	}
 	/* Enumerate all BAR values. */
 	status = io->Pci.Read(io, EfiPciIoWidthUint32, 4 * sizeof(UINT32),
@@ -322,12 +326,12 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 			continue;
 		if (!got_bar) {
 			got_bar = true;
-			Output(u"    BAR:");
+			info(u"    BAR:");
 		}
 		switch (bar & 0x00000007U) {
 		    case 0x00000000U:
 			/* 32-bit address in memory space */
-			Print(u" {@0x%x%s}", bar & 0xfffffff0U,
+			infof(u" {@0x%x%s}", bar & 0xfffffff0U,
 			    bar & 0x00000008U ? u" pf" : u"");
 				break;
 		    case 0x00000004U:
@@ -338,7 +342,7 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 			addr = pci_conf[idx];
 			addr <<= 32;
 			addr |= bar & 0xfffffff0U;
-			Print(u" {@0x%lx%s}", addr,
+			infof(u" {@0x%lx%s}", addr,
 			    bar & 0x00000008U ? u" pf" : u"");
 			break;
 		    case 0x00000001U:
@@ -346,16 +350,14 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 		    case 0x00000005U:
 		    case 0x00000007U:
 			/* address in I/O space */
-			Print(u" {\u2191""0x%x}", bar & 0xfffffffcU);
+			infof(u" {\u2191""0x%x}", bar & 0xfffffffcU);
 			break;
 		    default:
 			error(u"unhandled 16-bit PCI BAR");
 		}
 	}
 	if (got_bar)
-		Output(u"\r\n");
-	if (vga)
-		conf_slow_step_pause();
+		info(u"\r\n");
 	return vga;
 }
 
@@ -374,7 +376,7 @@ void process_pci(void)
 	    &gEfiPciIoProtocolGuid, NULL, &num_handles, &handles);
 	if (EFI_ERROR(status) || !num_handles)
 	        error_with_status(u"no PCI devices found", status);
-	Print(u"PCI devices: %lu\r\n"
+	infof(u"PCI devices: %lu\r\n"
 	       "  locn.        PCI id.   class+IF ROM sz.   "
 		 "supports  attrs.\r\n", num_handles);
 	for (idx = 0; idx < num_handles; ++idx) {

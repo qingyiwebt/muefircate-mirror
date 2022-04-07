@@ -78,6 +78,8 @@ extern __attribute__((noreturn)) void error_with_status(IN CONST CHAR16 *,
 							EFI_STATUS);
 extern __attribute__((noreturn)) void error(IN CONST CHAR16 *);
 extern void warn(IN CONST CHAR16 *);
+extern void info(IN CONST CHAR16 *);
+extern void infof(IN CONST CHAR16 *, ...);
 extern void print_guid(const EFI_GUID *);
 extern EFI_MEMORY_DESCRIPTOR *get_mem_map(UINTN *, UINTN *, UINTN *);
 extern uint8_t compute_cksum(const void *, size_t);

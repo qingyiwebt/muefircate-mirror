@@ -77,13 +77,14 @@ static void fv_cache_rimg(const void *rimg, uint32_t sz,
 	uint16_t vendor = pci_id_vendor(pci_id_0);
 	const uint16_t *dev_ids;
 	uint16_t dev;
+	unsigned i = 0;
 	const void *rimg_end = (const char *)rimg + sz;
 	void *rimg_copy = AllocatePool(sz);
 	if (!rimg_copy)
 		error(u"no mem. to cache ROM img.!");
 	memcpy(rimg_copy, rimg, sz);
 	dev_ids = rimg_pcir_find_dev_id_list(pcir, rimg_end);
-	Print(u"      cache ROM img. @0x%lx~@0x%lx for %04x:%04x%s "
+	infof(u"      cache ROM img. @0x%lx~@0x%lx for %04x:%04x%s "
 		     "%02x %02x %02x\r\n",
 	    rimg_copy, (char *)rimg_copy + sz - 1,
 	    (UINT32)vendor, (UINT32)pci_id_dev(pci_id_0),
@@ -91,12 +92,22 @@ static void fv_cache_rimg(const void *rimg, uint32_t sz,
 	    class_if >> 24, (class_if >> 16) & 0xffU, (class_if >> 8) & 0xffU);
 	fv_add_hash_entry(pci_id_0, class_if, rimg_copy, sz);
 	if (dev_ids) {
+		info(u"        additional dev. list:");
 		while ((dev = *dev_ids++) != 0) {
+			if (!i) {
+				info(u"\r\n");
+				info(u"        ");
+			}
+			++i;
+			if (i == 14)
+				i = 0;
+			infof(u" %04x", (uint32_t)dev);
 			pci_id = pci_make_id(vendor, dev);
 			if (pci_id != pci_id_0)
 				fv_add_hash_entry(pci_id, class_if,
 				    rimg_copy, sz);
 		}
+		info(u"\r\n");
 	}
 }
 
@@ -111,9 +122,9 @@ static void fv_gather_rimgs_for_one_sxn(const void *rom, UINTN rom_sz,
 	bool saw_a_pcir = false;
 	while ((pcir = rimg_find_pcir(rom_left, rom_left_sz)) != NULL) {
 		if (!saw_a_pcir) {
-			Output(u"    ");
+			info(u"    ");
 			print_guid(p_guid);
-			Print(u" raw sec. %lx is option ROM\r\n", instance);
+			infof(u" raw sec. %lx is option ROM\r\n", instance);
 			saw_a_pcir = true;
 		}
 		this_sz = (uint32_t)pcir->rimg_sz_hkib * HKIBYTE;
@@ -182,7 +193,6 @@ static void fv_gather_rimgs_for_one_fv(EFI_FIRMWARE_VOLUME2_PROTOCOL *fv)
 		fv_gather_rimgs_for_one_file(fv, &guid);
 	}
 	FreePool(key);
-	conf_slow_step_pause();
 }
 
 void fv_init(void)
@@ -193,10 +203,10 @@ void fv_init(void)
 	EFI_STATUS status = LibLocateHandle(ByProtocol,
 	    &gEfiFirmwareVolume2ProtocolGuid, NULL, &num_handles, &handles);
 	if (EFI_ERROR(status) || !num_handles) {
-		Output(u"no EFI firmware volumes avail.?\r\n");
+		info(u"no EFI firmware volumes avail.?\r\n");
 		return;
 	}
-	Print(u"EFI firmware volumes: %lu\r\n", num_handles);
+	infof(u"EFI firmware volumes: %lu\r\n", num_handles);
 	for (bucket = 0; bucket < HASH_BUCKETS; ++bucket)
 		ht[bucket] = NULL;
 	for (hidx = 0; hidx < num_handles; ++hidx) {
@@ -206,7 +216,7 @@ void fv_init(void)
 		    &gEfiFirmwareVolume2ProtocolGuid, (void **)&fv);
 		if (EFI_ERROR(status))
 			continue;
-		Print(u"  FV %lu\r\n", hidx);
+		infof(u"  FV %lu\r\n", hidx);
 		fv_gather_rimgs_for_one_fv(fv);
 	}
 	FreePool(handles);

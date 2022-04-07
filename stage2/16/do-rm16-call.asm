@@ -104,6 +104,7 @@ hello16:
 
 msg:	db	".:. biefircate ", VERSION, " .:. "
 	db	"hello world from int 0x10", 13, 10
+	db	"system halted, for now", 13, 10
 .end:
 
 	section	.bss

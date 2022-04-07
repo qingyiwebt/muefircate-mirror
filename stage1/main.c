@@ -55,19 +55,19 @@ static void process_efi_conf_tables(void)
 {
 	UINTN i, sct_cnt = ST->NumberOfTableEntries;
 	acpi_xsdp_t *rsdp = NULL;
-	Output(u"EFI sys. conf. tables:");
+	info(u"EFI sys. conf. tables:");
 	for (i = 0; i < sct_cnt; ++i) {
 		const EFI_CONFIGURATION_TABLE *cft =
 		    &ST->ConfigurationTable[i];
 		const EFI_GUID *vguid = &cft->VendorGuid;
 		if (i % 2 == 0)
-			Output(u"\r\n");
-		Output(u"  ");
+			info(u"\r\n");
+		info(u"  ");
 		print_guid(vguid);
 		if (memcmp(vguid, &Acpi20TableGuid, sizeof(EFI_GUID)) == 0)
 			rsdp = cft->VendorTable;
 	}
-	Output(u"\r\n");
+	info(u"\r\n");
 	if (!rsdp)
 		error(u"no ACPI 2+ RSDP");
 	acpi_init(rsdp);
@@ -93,7 +93,7 @@ static void test_if_secure_boot(void)
 	    &gEfiGlobalVariableGuid, NULL, &data_sz, &data);
 	if (!EFI_ERROR(status) && data)
 		secure_boot_p = TRUE;
-	Print(u"secure boot: %s\r\n", secure_boot_p ? u"yes" : u"no");
+	infof(u"secure boot: %s\r\n", secure_boot_p ? u"yes" : u"no");
 }
 
 static Elf32_Addr alloc_trampoline(void)
@@ -104,7 +104,7 @@ static Elf32_Addr alloc_trampoline(void)
 	if (EFI_ERROR(status))
 		error_with_status(u"cannot get mem. for trampoline & stk.",
 		    status);
-	Print(u"made space for trampoline & stk. @0x%lx\r\n", addr);
+	infof(u"made space for trampoline & stk. @0x%lx\r\n", addr);
 	return (Elf32_Addr)addr;
 }
 
@@ -117,7 +117,7 @@ static void dump_stage2_info(EFI_FILE_PROTOCOL *prog, CONST CHAR16 *name)
 	EFI_FILE_INFO *info = LibFileInfo(prog);
 	if (!info)
 		error(u"cannot get info on stage 2");
-	Print(u"stage2: %s  size: 0x%lx  attrs.: 0x%lx\r\n",
+	infof(u"stage2: %s  size: 0x%lx  attrs.: 0x%lx\r\n",
 	    name, info->FileSize, info->Attribute);
 	FreePool(info);
 }
@@ -202,36 +202,36 @@ static Elf32_Addr load_stage2(void)
 	    ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
 	    ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
 	    ehdr.e_ident[EI_MAG3] != ELFMAG3) {
-		Output(u"  not ELF file\r\n");
+		info(u"  not ELF file\r\n");
 		goto bad_elf;
 	}
 	x1 = ehdr.e_ident[EI_VERSION];
 	x2 = ehdr.e_version;
-	Print(u"  ELF ver.: %u / %u\r\n", x1, x2);
+	infof(u"  ELF ver.: %u / %u\r\n", x1, x2);
 	if (x1 != EV_CURRENT || x2 != EV_CURRENT)
 		goto bad_elf;
 	x1 = ehdr.e_ehsize;
 	x2 = ehdr.e_phentsize;
 	ph_cnt = ehdr.e_phnum;
-	Print(u"  ehdr sz.: 0x%x  phdr sz.: 0x%x  phdr cnt.: %u\r\n",
+	infof(u"  ehdr sz.: 0x%x  phdr sz.: 0x%x  phdr cnt.: %u\r\n",
 	    x1, x2, ph_cnt);
 	if (x1 < sizeof(ehdr) || x2 != sizeof(*phdr))
 		goto bad_elf;
 	if (ph_cnt > MAX_PHDRS) {
-		Output(u"  too many phdrs.\r\n");
+		info(u"  too many phdrs.\r\n");
 		goto bad_elf;
 	}
 	x1 = ehdr.e_machine;
 	entry = ehdr.e_entry;
-	Print(u"  machine: 0x%x  entry: @0x%x\r\n", x1, entry);
+	infof(u"  machine: 0x%x  entry: @0x%x\r\n", x1, entry);
 	if (x1 != EM_386) {
-		Output(u"  not x86-32 ELF\r\n");
+		info(u"  not x86-32 ELF\r\n");
 		goto bad_elf;
 	}
 	seek_stage2(prog, vol, ehdr.e_phoff);
 	read_stage2(prog, vol, ph_cnt * sizeof(*phdr), phdrs);
-	Output(u"  phdr# file off.  phy.addr.  virt.addr. type       "
-		  "file sz.   mem. sz.\r\n");
+	info(u"  phdr# file off.  phy.addr.  virt.addr. type       "
+	      "file sz.   mem. sz.\r\n");
 	for (ph_idx = 0; ph_idx < ph_cnt; ++ph_idx) {
 		phdr = &phdrs[ph_idx];
 		Elf32_Word type = phdr->p_type;
@@ -241,13 +241,13 @@ static Elf32_Addr load_stage2(void)
 		Elf32_Word filesz = phdr->p_filesz, memsz = phdr->p_memsz;
 		UINTN pages;
 		phdr = &phdrs[ph_idx];
-		Print(u"  %5u 0x%08x 0x%08lx 0x%08x 0x%08x 0x%08x 0x%08x\r\n",
+		infof(u"  %5u 0x%08x 0x%08lx 0x%08x 0x%08x 0x%08x 0x%08x\r\n",
 		    ph_idx, off, paddr, phdr->p_vaddr, type, filesz, memsz);
 		if (type != PT_LOAD)
 			continue;
 		if (filesz > memsz) {
 			free_stage2_mem(phdrs, ph_idx);
-			Output(u"  seg. file sz. > seg. mem. sz.!\r\n");
+			info(u"  seg. file sz. > seg. mem. sz.!\r\n");
 			goto bad_elf;
 		}
 		if (slack) {
@@ -350,7 +350,7 @@ static void fake_mp_table(void)
 	u->s.ebda_kib = 1;
 	memset(u->s.ebda_reserved, 0, 15);
 	/* Fill up the MP floating pointer structure. */
-	Print(u"placing MP tables @0x%x\r\n", (uintptr_t)u);
+	infof(u"placing MP tables @0x%x\r\n", (uintptr_t)u);
 	u->s.flt.sig = MAGIC32('_', 'M', 'P', '_');
 	u->s.flt.mp_conf_addr = (uint32_t)(uintptr_t)&u->s.conf;
 	u->s.flt.len = sizeof(u->s.flt);
@@ -377,7 +377,7 @@ static void fake_mp_table(void)
 	u->s.conf.ext_tbl_len = 0;
 	u->s.conf.ext_tbl_cksum = u->s.conf.reserved = 0;
 	/* While at it... */
-	Print(u"LAPIC: @0x%lx\r\n", lapic_addr);
+	infof(u"LAPIC: @0x%lx\r\n", lapic_addr);
 	/* Fill up the entry for this processor. */
 	u->s.cpu.type = MP_CPU;
 	u->s.cpu.lapic_id = (uint8_t)lapic[0x20 / 4];
@@ -414,7 +414,7 @@ static unsigned prepare_to_hand_over(EFI_HANDLE image_handle)
 	/* Wrap up firmware volume handling. */
 	fv_fini();
 	/* Say we are about to exit UEFI. */
-	Output(u"exit UEFI\r\n");
+	info(u"exit UEFI\r\n");
 	/*
 	 * Add information about blocks of extended memory (above the 1 MiB
 	 * mark) to the boot parameters.
@@ -477,7 +477,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 	Elf32_Addr trampoline, entry;
 	unsigned base_kib;
 	InitializeLib(image_handle, system_table);
-	Output(u".:. biefircate " VERSION " .:.\r\n");
+	info(u".:. biefircate " VERSION " .:.\r\n");
 	init();
 	process_efi_conf_tables();
 	find_boot_media();

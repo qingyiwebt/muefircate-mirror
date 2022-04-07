@@ -27,8 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdarg.h>
 #include <string.h>
 #include "stage1/stage1.h"
+
+#define NL_BEFORE_PAUSE	20
+
+static unsigned pause_countdown = NL_BEFORE_PAUSE;
 
 static void get_time(EFI_TIME *when)
 {
@@ -69,6 +74,22 @@ static bool wait_for_one_second(volatile bool *p_signalled)
 	return p_signalled && *p_signalled;
 }
 
+static void do_pause_1(void)
+{
+	--pause_countdown;
+	if (!pause_countdown) {
+		pause_countdown = NL_BEFORE_PAUSE;
+		conf_slow_step_pause();
+	}
+}
+
+static void do_pause_2(IN CONST CHAR16 *msg)
+{
+	UINTN len = StrLen(msg);
+	if (len && msg[len - 1] == u'\n')
+		do_pause_1();
+}
+
 int memcmp(const void *s1, const void *s2, size_t n)
 {
 	const unsigned char *p1 = s1, *p2 = s2;
@@ -106,6 +127,22 @@ __attribute__((noreturn)) void error(IN CONST CHAR16 *msg)
 void warn(IN CONST CHAR16 *msg)
 {
 	Print(u"%Hwarning: %s%N\r\n", msg);
+	do_pause_1();
+}
+
+void info(IN CONST CHAR16 *msg)
+{
+	Output(msg);
+	do_pause_2(msg);
+}
+
+void infof(IN CONST CHAR16 *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	VPrint(fmt, ap);
+	va_end(ap);
+	do_pause_2(fmt);
 }
 
 void print_guid(const EFI_GUID *p_guid)

@@ -33,7 +33,7 @@
 
 static void acpi_process_fadt(acpi_fadt_t *fadt)
 {
-	Print(u"  FADT: @0x%lx\r\n", fadt);
+	infof(u"  FADT: @0x%lx\r\n", fadt);
 	if (fadt->header.length < offsetof(acpi_fadt_t, iapc_boot_flags) +
 				  sizeof(fadt->iapc_boot_flags))
 		error(u"FADT too small");
@@ -45,7 +45,7 @@ static void acpi_process_fadt(acpi_fadt_t *fadt)
 
 static void acpi_process_madt(acpi_madt_t *madt)
 {
-	Print(u"  MADT: @0x%lx\r\n", madt);
+	infof(u"  MADT: @0x%lx\r\n", madt);
 	if ((madt->flags & MADT_PCAT_COMPAT) == 0)
 		error(u"MADT: no 8259");
 }
@@ -60,7 +60,7 @@ void acpi_init(acpi_xsdp_t *rsdp)
 	uint32_t sz;
 	size_t num_tabs, i;
 	/* Do some quick checks on the RSDP. */
-	Print(u"ACPI 2+ RSDP: @0x%lx", rsdp);
+	infof(u"ACPI 2+ RSDP: @0x%lx", rsdp);
 	if (memcmp(rsdp->signature, expect_rsdp_sig, 8) != 0)
 		error(u"RSDP has bad sig.");
 	if (rsdp->revision < 2)
@@ -73,7 +73,7 @@ void acpi_init(acpi_xsdp_t *rsdp)
 		error(u"RSDP has bad checksums");
 	/* Do some quick checks on the XSDT. */
 	xsdt = (acpi_xsdt_t *)rsdp->xsdt;
-	Print(u"  XSDT: @0x%lx\r\n", xsdt);
+	infof(u"  XSDT: @0x%lx\r\n", xsdt);
 	if (memcmp(xsdt->header.signature, expect_xsdt_sig, 4) != 0)
 		error(u"XSDT has bad sig.");
 	sz = xsdt->header.length;

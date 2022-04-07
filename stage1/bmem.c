@@ -189,7 +189,7 @@ void bmem_init(void)
 	 * Do not count the page at address 0, even if we successfull
 	 * allocated it.
 	 */
-	Output(u"avail. base mem. blocks:");
+	info(u"avail. base mem. blocks:");
 	start = BMEM_MAX_ADDR;
 	for (idx = 1; idx < BMEM_MAX_ADDR / EFI_PAGE_SIZE; ++idx) {
 		if (bvec_test(&avail, idx)) {
@@ -200,8 +200,8 @@ void bmem_init(void)
 			blk[num_blks].start = start;
 			blk[num_blks].end = blk[num_blks].orig_end = end;
 			if (num_blks % 4 == 0)
-				Output(u"\r\n");
-			Print(u"  @0x%lx~@0x%lx", start, end - 1);
+				info(u"\r\n");
+			infof(u"  @0x%lx~@0x%lx", start, end - 1);
 			++num_blks;
 			start = BMEM_MAX_ADDR;
 		}
@@ -211,8 +211,8 @@ void bmem_init(void)
 		blk[num_blks].start = start;
 		blk[num_blks].end = blk[num_blks].orig_end = end;
 		if (num_blks % 4 == 0)
-			Output(u"\r\n");
-		Print(u"  @0x%lx~@0x%lx", start, end - 1);
+			info(u"\r\n");
+		infof(u"  @0x%lx~@0x%lx", start, end - 1);
 		++num_blks;
 	}
 	/*
@@ -242,8 +242,8 @@ void bmem_init(void)
 			if (end_idx > BMEM_MAX_ADDR / EFI_PAGE_SIZE)
 				end_idx = BMEM_MAX_ADDR / EFI_PAGE_SIZE;
 			if ((num_blks + num_extra_blks) % 4 == 0)
-				Output(u"\r\n");
-			Print(u"  [@0x%lx~@0x%lx]", start, end - 1);
+				info(u"\r\n");
+			infof(u"  [@0x%lx~@0x%lx]", start, end - 1);
 			++num_extra_blks;
 			while (idx < end_idx) {
 				bvec_set(&avail, idx);
@@ -252,7 +252,7 @@ void bmem_init(void)
 			bmem_uefi_attr &= desc->Attribute;
 		}
 	}
-	Output(u"\r\n");
+	info(u"\r\n");
 	idx = 0;
 	while (idx < BMEM_MAX_ADDR / EFI_PAGE_SIZE && bvec_test(&avail, idx))
 		++idx;
@@ -344,7 +344,7 @@ void bmem_fini(EFI_MEMORY_DESCRIPTOR *descs, UINTN num_ents, UINTN desc_sz,
 	runtime_bmem_top &= -KIBYTE;
 #if 0
 	/* FIXME: this alters the UEFI memory map. */
-	Print(u"base mem. at boottime: @0x%x~@0x%x\r\n",
+	infof(u"base mem. at boottime: @0x%x~@0x%x\r\n",
 	    boottime_bmem_bot, runtime_bmem_top);
 #endif
 	bmem_check_enough();
