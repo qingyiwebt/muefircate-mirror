@@ -29,7 +29,7 @@
 set -e
 us="`dirname "$0"`"
 if test \! -e "$us"/lolwutconf/configure.inc; then
-	git submodule update
+	git submodule update --init
 fi
 . "$us"/lolwutconf/configure.inc
 conf_begin --host=x86_64-w64-mingw32 --host-exec=: \
