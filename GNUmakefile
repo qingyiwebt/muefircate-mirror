@@ -77,7 +77,7 @@ endif
 STAGE2 = stage2.sys
 LEGACY_MBR = legacy-mbr.bin
 
-default: $(STAGE1) $(STAGE2) hd.img romdumper.efi
+default: $(STAGE1) $(STAGE2) hd.img hd.img.zip romdumper.efi
 .PHONY: default
 
 ifneq "" "$(SBSIGN_MOK)"
@@ -171,6 +171,11 @@ endif
 $(LEGACY_MBR): legacy-mbr.asm
 	$(AS2) -f bin -MD $(@:.bin=.d) -o $@ $< 
 
+hd.img.zip: hd.img
+	$(RM) $@.tmp
+	zip -9 $@.tmp $^
+	mv $@.tmp $@
+
 hd.img: $(STAGE1) $(STAGE2) $(LEGACY_MBR)
 	$(RM) $@.tmp
 	dd if=/dev/zero of=$@.tmp bs=1048576 count=32
@@ -209,8 +214,8 @@ clean:
 	for d in . stage1 stage2 stage2/16; do \
 		if test -d "$$d"; then \
 			(cd "$$d" && \
-			 $(RM) *.[ods] *.so *.efi *.img *.vdi *.map *.stamp \
-			       *.sys *.elf *.bin *~); \
+			 $(RM) *.[ods] *.so *.efi *.img *.img.zip *.vdi \
+			       *.map *.stamp *.sys *.elf *.bin *~); \
 		fi; \
 	done
 ifeq "$(conf_Separate_build_dir)" "yes"
