@@ -176,12 +176,20 @@ hd.img.zip: hd.img
 	zip -9 $@.tmp $^
 	mv $@.tmp $@
 
+# mkdosfs only understands a --offset version starting from version 4.2 (Jan
+# 2021).  For older versions of mkdosfs, we need to use a workaround.
 hd.img: $(STAGE1) $(STAGE2) $(LEGACY_MBR)
 	$(RM) $@.tmp
 	dd if=/dev/zero of=$@.tmp bs=1048576 count=32
 	dd if=$(LEGACY_MBR) of=$@.tmp conv=notrunc
 	echo start=32K type=0B bootable | sfdisk $@.tmp
-	mkdosfs -v -F16 --offset 64 $@.tmp
+	mkdosfs -v -F16 --offset 64 $@.tmp || ( \
+	    dd if=$@.tmp of=$@.2.tmp ibs=1024 skip=32 obs=1048576 && \
+	    mkdosfs -v -F16 $@.2.tmp && \
+	    dd if=$@.2.tmp of=$@.tmp obs=1024 seek=32 ibs=1048576 \
+				     conv=notrunc && \
+	    $(RM) $@.2.tmp \
+	)
 	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT ::/EFI/biefirc
 	mcopy -i $@.tmp@@32K $< ::/EFI/BOOT/bootx64.efi
 	mcopy -i $@.tmp@@32K $(STAGE2) ::/EFI/biefirc/
