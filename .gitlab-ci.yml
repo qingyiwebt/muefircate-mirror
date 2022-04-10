@@ -38,7 +38,7 @@ test:
     - apt-get update -y
     - >
         apt-get install -y git make gcc-mingw-w64-x86-64 gcc-multilib nasm
-        dosfstools mtools fdisk qemu-utils
+        dosfstools mtools fdisk qemu-utils zip
   script:
     - ./configure
     - make
@@ -46,5 +46,5 @@ test:
     paths:
       - stage1.efi
       - stage2.sys
-      - hd.img
+      - hd.img.zip
       - romdumper.efi
