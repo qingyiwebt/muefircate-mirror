@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 TK Chia
+ * Copyright (c) 2021--2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -38,7 +38,7 @@ static bool enable_legacy_vga(EFI_PCI_IO_PROTOCOL *io, UINT32 class_if,
 	EFI_STATUS status;
 	UINT64 enables;
 	*p_enables = 0;
-	switch (class_if & 0xffffff00UL) {
+	switch (class_if) {
 	    case 0x03000000:  /* VGA */
 	    case 0x03000100:  /* 8514 */
 	    case 0x03010000:  /* XGA */
@@ -278,7 +278,7 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 	    supports & ~0xffffffULL ? u'+' : u' ',
 	    attrs & 0xffffffULL,
 	    attrs & ~0xffffffULL ? u'+' : u' ');
-	switch (class_if & 0xffffff00UL) {
+	switch (class_if) {
 	    case 0x03000000:
 		info(u" VGA");		break;
 	    case 0x03000100:

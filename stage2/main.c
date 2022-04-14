@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 TK Chia
+ * Copyright (c) 2021--2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -43,8 +43,9 @@ static void rimg_init(bparm_t *bparms, bool init_vga)
 		if (bp->type != BP_PCID)
 			continue;
 		pd = &bp->u->pci_dev;
-		switch (pd->class_if & 0xffff0000UL) {
+		switch (pd->class_if) {
 		    case 0x03000000:  /* VGA */
+		    case 0x03000100:  /* 8514 */
 		    case 0x03010000:  /* XGA */
 			do_init = init_vga;
 			break;
