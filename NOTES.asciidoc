@@ -53,13 +53,19 @@
 :fn-abraham-20: footnote:abraham-20[https://github.com/eyalabraham/new-xt-bios.  Retrieved on 28 August 2021.]
 :fn-ibm-86: footnote:ibm-86[International Business Machines Corporation.  IBM: Personal Computer Hardware Reference Library: Technical Reference 6183355, pp. 5-14 et seq.  March 1986.  https://archive.org/details/bitsavers_ibmpcat618ferenceMar86_25829277/page/n245/mode/2up.]
 :fn-intel-97: footnote:intel-97[Intel Corporation.  MultiProcessor Specification: Version 1.4.  May 1997.]
+:fn-lunt-18: footnote:lunt-18[B. D. Lunt.  USB: The Universal Serial Bus.  April 2018.]
+:fn-lunt-22: footnote:lunt-22[https://github.com/fysnet/FYSOS.  Retrieved on 15 April 2022.]
+:fn-oconnor-22: footnote:oconnor-22[https://www.seabios.org/.  Retrieved on 15 April 2022.]
 
   * UEFI stuff
   ** **note:** boot services will be unavailable once bootloader calls `BS->ExitBootServices(, )`
   *** _might_ be possible to implement a BIOS without exiting boot services, but this is non-trivial — UEFI expects to be in control of most system resources, incl. memory, page tables, and IRQs
   * how to correctly interface with PC hardware legacy-style
   ** IBM's published BIOS source code, e.g. PC AT BIOS listings from 1986,{fn-ibm-86} might be useful
-  ** also potentially useful is Eyal Abraham's `new-xt-bios`,{fn-abraham-20} a rewrite of the BIOS for an (older) PC XT with partially custom hardware; code is under an MIT License
+  ** also potentially useful is Eyal Abraham's `new-xt-bios`,{fn-abraham-20} a rewrite of the BIOS for an (older) PC XT with partially custom hardware (code is under an MIT License)
+  * USB stuff — possibly useful are
+  ** Forever Young Software's FYSOS code,{fn-lunt-22} a companion to their OS design book series, including a book on USB programming{fn-lunt-18}
+  ** the SeaBIOS project{fn-oconnor-22}
   * Xv6 will panic if it cannot find MP tables per Intel's (deprecated) MultiProcessor Specification{fn-intel-97}
   ** `biefircate` produces dummy MP tables if `XV6_COMPAT` is defined
   ** other OSes probably do not need MP tables to work
