@@ -1,4 +1,4 @@
-; Copyright (c) 2021 TK Chia
+; Copyright (c) 2021--2022 TK Chia
 ;
 ; Redistribution and use in source and binary forms, with or without
 ; modification, are permitted provided that the following conditions are
@@ -29,14 +29,6 @@
 
 	section	.text
 
-%define MAGIC32(a, b, c, d) \
-	(((a) & 0xff)	    | \
-	 ((b) & 0xff) <<  8 | \
-	 ((c) & 0xff) << 16 | \
-	 ((d) & 0xff) << 24)
-
-VGA_INIT_SEG equ 0x1000
-
 	extern	mem_init, stage2_main, rm16
 
 	global	_start
@@ -52,8 +44,9 @@ _start:
 	mov	ds, ax
 	mov	es, ax
 	mov	ss, ax
-	mov	fs, ax
 	mov	gs, ax
+	mov	al, SEL_DS16
+	mov	fs, ax
 	mov	eax, ebp
 	call	stage2_main
 
@@ -66,7 +59,7 @@ idtrrm:	dw	0x100*4-1
 
 	section	.data
 
-	global	gdt_desc_cs16
+	global	gdt_desc_cs16, gdt_desc_ds16
 
 	align	8
 gdt	equ	$-8
@@ -84,6 +77,12 @@ gdt	equ	$-8
 gdt_desc_cs16:
 	dq	0x008f9a000000ffff	; 16-bit protected mode code seg.
 					; pointing to our 16-bit code
+%if SEL_DS16 != $-gdt
+%   error "SEL_DS16 does not match actual GDT"
+%endif
+gdt_desc_ds16:
+	dq	0x008f92000000ffff	; 16-bit protected mode data seg.
+					; pointing to our 16-bit data
 %if SEL_DS16_ZERO != $-gdt
 %   error "SEL_DS16_ZERO does not match actual GDT"
 %endif

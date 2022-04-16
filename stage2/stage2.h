@@ -34,7 +34,21 @@
 #include <stdlib.h>
 #include "bparm.h"
 
+/* Macros, inline functions, & other definitions (part 1). */
+
 typedef uint32_t farptr16_t;
+
+/*
+ * Real-mode segment of the BIOS data area.  BDA_SEG:0 refers to the same
+ * address as the `bda' structure.
+ */
+#define BDA_SEG		0x40
+
+/* Size of real mode transfer buffer. */
+#define TB_SZ		0x100
+
+/* Address space specifier for our 16-bit data segment. */
+#define DATA16		__seg_fs
 
 /* irq.c functions. */
 
@@ -47,14 +61,18 @@ extern void *mem_alloc(size_t, size_t, uintptr_t);
 extern void *mem_va_map(uint64_t, size_t, unsigned);
 extern void mem_va_unmap(volatile void *, size_t);
 
-/* rm16.asm functions. */
+/* rm16.asm functions and data. */
 
 extern uint16_t rm16_cs;
 extern void rm16_init(void);
 extern void rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
 		      farptr16_t callee);
 
-/* Macros, inline functions, & other definitions. */
+/* 16/tb16.c data. */
+
+extern DATA16 char tb16[TB_SZ];
+
+/* Macros, inline functions, & other definitions (part 2). */
 
 #define XM32_MAX_ADDR	0x100000000ULL	/* end of 32-bit extended memory,
 					   i.e. the 4 GiB mark */
@@ -171,18 +189,18 @@ typedef struct __attribute__((packed)) {
 
 extern __seg_gs bda_t bda;
 
-/*
- * Real-mode segment of the BIOS data area.  BDA_SEG:0 refers to the same
- * address as the `bda' structure.
- */
-#define BDA_SEG		0x40
-
-#define DATA16		__seg_fs
-
 /* Fashion a far 16-bit pointer from a 16-bit segment & a 16-bit offset. */
 static inline farptr16_t MK_FP16(uint16_t seg, uint16_t off)
 {
 	return (farptr16_t)seg << 16 | off;
+}
+
+/* Call a function in our own 16-bit segment. */
+static inline void rm16_cs_call(uint32_t eax, uint32_t edx, uint32_t ecx,
+				uint32_t ebx, void (*callee)(/* ... */))
+{
+	farptr16_t far_callee = MK_FP16(rm16_cs, (uint16_t)(uintptr_t)callee);
+	rm16_call(eax, edx, ecx, ebx, far_callee);
 }
 
 /* Read cr0. */

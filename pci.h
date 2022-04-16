@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 TK Chia
+ * Copyright (c) 2021--2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -44,6 +44,18 @@
 
 #include <inttypes.h>
 #include "common.h"
+
+/*
+ * Class + subclass + programming interface values.  The lower 8 bytes are
+ * always 0x00.
+ */
+#define PCI_CIF_VID_VGA		0x03000000U /* VGA controller */
+#define PCI_CIF_VID_8514	0x03000100U /* 8514-compatible controller */
+#define PCI_CIF_VID_XGA		0x03010000U /* XGA controller */
+#define PCI_CIF_BUS_USB_UHCI	0x0c030000U /* USB XHCI controller */
+#define PCI_CIF_BUS_USB_OHCI	0x0c031000U /* USB XHCI controller */
+#define PCI_CIF_BUS_USB_EHCI	0x0c032000U /* USB XHCI controller */
+#define PCI_CIF_BUS_USB_XHCI	0x0c033000U /* USB XHCI controller */
 
 /* Option ROM image header. */
 typedef struct __attribute__((packed)) {

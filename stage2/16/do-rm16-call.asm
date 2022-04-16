@@ -60,7 +60,7 @@ rm16_call.cont2:
 	xor	si, si
 	mov	fs, si
 	mov	gs, si
-	sgdt	[gdtr]			; save our GDTR
+	o32 sgdt [gdtr]			; save our GDTR
 	mov	esi, cr4		; turn off cr4.PAE in case some 3rd-
 	and	si, byte ~CR4_PAE	; -party code wants to set up its
 	mov	cr4, esi		; own page tables at some point...
@@ -72,7 +72,7 @@ rm16_call.cont2:
 	mov	esp, [sp32]
 	mov	esi, [ptpd32]
 	mov	cr3, esi
-	lgdt	[gdtr]
+	o32 lgdt [gdtr]
 	mov	esi, cr4		; return to 32-bit protected mode
 	or	si, byte CR4_PAE	; with PAE paging
 	mov	cr4, esi

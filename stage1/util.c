@@ -132,7 +132,7 @@ void warn(IN CONST CHAR16 *msg)
 
 void info(IN CONST CHAR16 *msg)
 {
-	Output(msg);
+	Output((CHAR16 *)msg);
 	do_pause_2(msg);
 }
 

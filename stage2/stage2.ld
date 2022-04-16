@@ -40,7 +40,7 @@ PHDRS
 
 SECTIONS
 {
-	. = 0x301000 + SIZEOF_HEADERS;
+	. = 0x0c001000 + SIZEOF_HEADERS;
 
 	.text : {
 		*(.text .stub .text.* .gnu.linkonce.t.*)

@@ -33,7 +33,8 @@
 
 	section	.text
 
-	extern	mem_alloc, _stext16, _etext16, _sdata16, _end16, gdt_desc_cs16
+	extern	mem_alloc, _stext16, _etext16, _sdata16, _end16
+	extern	gdt_desc_cs16, gdt_desc_ds16
 	extern	rm16_call.cont1, rm16_call.rm_cs16, vecs16, NUM_VECS16
 
 	global	rm16_init
@@ -58,6 +59,7 @@ rm16_init:
 	mov	edx, KIBYTE		; -mode data
 	mov	ecx, BMEM_MAX_ADDR
 	call	mem_alloc
+	or	[gdt_desc_ds16+2], eax	; fix up the GDT entry for SEL_DS16
 	mov	edx, eax		; initialize the EBDA pointer
 	shr	edx, 4
 	mov	[bda.ebda], dx
@@ -84,6 +86,8 @@ rm16_init:
 	mov	[bda.kb_buf_tail], ax
 	mov	al, bda.def_kb_buf_end-bda
 	mov	[bda.kb_buf_end], ax
+	mov	ax, fs			; reload fs desc. cache (for SEL_DS16)
+	mov	fs, ax
 	pop	edi
 	pop	esi
 	ret
@@ -104,8 +108,13 @@ rm16_call:
 	mov	ds, si
 	mov	es, si
 	mov	ss, si
-	mov	fs, si
 	mov	gs, si
+	movzx	esi, word [bda.ebda]	; properly update SEL_DS16 descriptor
+	shl	esi, 4			; in case EBDA has moved
+	or	esi, 0x92000000
+	mov	[gdt_desc_ds16+2], esi
+	mov	si, SEL_DS16
+	mov	fs, si
 	popfd
 	pop	ebp
 	pop	edi
@@ -129,4 +138,3 @@ text16_load:
 starting_stack:
 
 	common	rm16_cs	2
-

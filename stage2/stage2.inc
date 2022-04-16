@@ -75,7 +75,8 @@ PORT_DUMMY equ	0x0080
 SEL_CS32 equ	0x0008
 SEL_DS32 equ	0x0010
 SEL_CS16 equ	0x0018
-SEL_DS16_ZERO equ 0x0020
+SEL_DS16 equ	0x0020
+SEL_DS16_ZERO equ 0x0028
 
 ; BIOS data area variables.
 	absolute 0x0400

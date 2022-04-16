@@ -39,9 +39,9 @@ static bool enable_legacy_vga(EFI_PCI_IO_PROTOCOL *io, UINT32 class_if,
 	UINT64 enables;
 	*p_enables = 0;
 	switch (class_if) {
-	    case 0x03000000:  /* VGA */
-	    case 0x03000100:  /* 8514 */
-	    case 0x03010000:  /* XGA */
+	    case PCI_CIF_VID_VGA:
+	    case PCI_CIF_VID_8514:
+	    case PCI_CIF_VID_XGA:
 		break;
 	    default:
 		return false;
@@ -279,19 +279,19 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 	    attrs & 0xffffffULL,
 	    attrs & ~0xffffffULL ? u'+' : u' ');
 	switch (class_if) {
-	    case 0x03000000:
+	    case PCI_CIF_VID_VGA:
 		info(u" VGA");		break;
-	    case 0x03000100:
+	    case PCI_CIF_VID_8514:
 		info(u" 8514");		break;
-	    case 0x03010000:
+	    case PCI_CIF_VID_XGA:
 		info(u" XGA");		break;
-	    case 0x0c030000:
+	    case PCI_CIF_BUS_USB_UHCI:
 		info(u" USB UHCI");	break;
-	    case 0x0c031000:
+	    case PCI_CIF_BUS_USB_OHCI:
 		info(u" USB OHCI");	break;
-	    case 0x0c032000:
+	    case PCI_CIF_BUS_USB_EHCI:
 		info(u" USB EHCI");	break;
-	    case 0x0c033000:
+	    case PCI_CIF_BUS_USB_XHCI:
 		info(u" USB XHCI");	break;
 	}
 	info(u"\r\n");

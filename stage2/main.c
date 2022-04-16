@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pci.h"
 #include "stage2/stage2.h"
 
 static void rimg_init(bparm_t *bparms, bool init_vga)
@@ -44,9 +45,9 @@ static void rimg_init(bparm_t *bparms, bool init_vga)
 			continue;
 		pd = &bp->u->pci_dev;
 		switch (pd->class_if) {
-		    case 0x03000000:  /* VGA */
-		    case 0x03000100:  /* 8514 */
-		    case 0x03010000:  /* XGA */
+		    case PCI_CIF_VID_VGA:
+		    case PCI_CIF_VID_8514:
+		    case PCI_CIF_VID_XGA:
 			do_init = init_vga;
 			break;
 		    default:
@@ -64,8 +65,8 @@ static void rimg_init(bparm_t *bparms, bool init_vga)
 
 static void hello(void)
 {
-	extern void hello16(void);
-	rm16_call(0, 0, 0, 0, MK_FP16(rm16_cs, (uint16_t)(uintptr_t)hello16));
+	extern void hello16(/* ... */);
+	rm16_cs_call(0, 0, 0, 0, hello16);
 }
 
 void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
