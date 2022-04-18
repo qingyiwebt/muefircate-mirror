@@ -10,3 +10,6 @@
 [submodule "lai"]
 	path = lai
 	url = https://github.com/managarm/lai.git
+[submodule "nanoprintf"]
+	path = nanoprintf
+	url = https://github.com/charlesnicholson/nanoprintf.git

@@ -31,24 +31,29 @@
 #define H_STAGE2_STAGE2
 
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include "bparm.h"
 
 /* Macros, inline functions, & other definitions (part 1). */
 
 typedef uint32_t farptr16_t;
-
 /*
  * Real-mode segment of the BIOS data area.  BDA_SEG:0 refers to the same
  * address as the `bda' structure.
  */
 #define BDA_SEG		0x40
-
 /* Size of real mode transfer buffer. */
 #define TB_SZ		0x100
-
 /* Address space specifier for our 16-bit data segment. */
 #define DATA16		__seg_fs
+
+/* conio.c functions. */
+
+extern int cputs(const char *);
+extern int vcprintf(const char *, va_list)
+	   __attribute__((format(printf, 1, 0)));
+extern int cprintf(const char *, ...) __attribute__((format(printf, 1, 2)));
 
 /* irq.c functions. */
 
@@ -67,6 +72,7 @@ extern uint16_t rm16_cs;
 extern void rm16_init(void);
 extern void rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
 		      farptr16_t callee);
+extern void copy_to_tb(const void *, size_t);
 
 /* 16/tb16.c data. */
 

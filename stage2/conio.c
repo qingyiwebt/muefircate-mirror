@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021--2022 TK Chia
+ * Copyright (c) 2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -27,56 +27,76 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#define NANOPRINTF_VISIBILITY_STATIC 1
+#define NANOPRINTF_USE_FIELD_WIDTH_FORMAT_SPECIFIERS 1
+#define NANOPRINTF_USE_PRECISION_FORMAT_SPECIFIERS 1
+#define NANOPRINTF_USE_FLOAT_FORMAT_SPECIFIERS 0
+#define NANOPRINTF_USE_LARGE_FORMAT_SPECIFIERS 1
+#define NANOPRINTF_USE_BINARY_FORMAT_SPECIFIERS 0
+#define NANOPRINTF_USE_WRITEBACK_FORMAT_SPECIFIERS 0
+#define NANOPRINTF_IMPLEMENTATION 1
 #include <string.h>
-#include "pci.h"
 #include "stage2/stage2.h"
+#include "nanoprintf/nanoprintf.h"
 
-static void rimg_init(bparm_t *bparms, bool init_vga)
+struct our_pf_ctx {
+	size_t pos;
+	char buf[TB_SZ];
+};
+
+
+static void outmem_1(const char *str, size_t n)
 {
-	bparm_t *bp;
-	for (bp = bparms; bp; bp = bp->next) {
-		uint16_t rimg_seg;
-		bdat_pci_dev_t *pd;
-		bool do_init;
-		if (bp->type != BP_PCID)
-			continue;
-		pd = &bp->u->pci_dev;
-		switch (pd->class_if) {
-		    case PCI_CIF_VID_VGA:
-		    case PCI_CIF_VID_8514:
-		    case PCI_CIF_VID_XGA:
-			do_init = init_vga;
-			break;
-		    default:
-			do_init = !init_vga;
-		}
-		if (!do_init)
-			continue;
-		rimg_seg = pd->rimg_seg;
-		if (!rimg_seg)
-			continue;
-		rm16_call(pd->pci_locn, 0, 0, pd->rimg_rt_seg,
-		    MK_FP16(rimg_seg, 0x0003));
+	extern void outmem16(/* ... */);
+	copy_to_tb(str, n);
+	rm16_cs_call((uint32_t)tb16, n, 0, 0, outmem16);
+}
+
+static void our_putc_1(int c, void *pv)
+{
+	struct our_pf_ctx *pctx = pv;
+	if (pctx->pos >= TB_SZ) {
+		outmem_1(pctx->buf, TB_SZ);
+		pctx->pos = 0;
 	}
+	pctx->buf[pctx->pos] = c;
+	++pctx->pos;
 }
 
-static void hello(void)
+static void our_putc(int c, void *pv)
 {
-	extern void setvideomode16(/* ... */);
-	rm16_cs_call(3, 0, 0, 0, setvideomode16);
-	cputs(".:. biefircate " VERSION " .:. hello world from int 0x10\n");
+	if (c == '\n')
+		our_putc_1('\r', pv);
+	our_putc_1(c, pv);
 }
 
-void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
+int cputs(const char *str)
 {
-	mem_init(bparms);
-	rm16_init();
-	irq_init(bparms);
-	rimg_init(bparms, true);
-	hello();
-	rimg_init(bparms, false);
-	hlt();
+	size_t n = strlen(str);
+	while (n > TB_SZ) {
+		outmem_1(str, TB_SZ);
+		n -= TB_SZ;
+		str += TB_SZ;
+	}
+	outmem_1(str, n);
+	return 0;
+}
+
+int vcprintf(const char *fmt, va_list ap)
+{
+	struct our_pf_ctx ctx = { 0, };
+	int res = npf_vpprintf(our_putc, &ctx, fmt, ap);
+	if (res >= 0 && ctx.pos) 
+		outmem_1(ctx.buf, ctx.pos);
+	return res;
+}
+
+int cprintf(const char *fmt, ...)
+{
+	va_list ap;
+	int res;
+	va_start(ap, fmt);
+	res = vcprintf(fmt, ap);
+	va_end(ap);
+	return res;
 }

@@ -84,28 +84,30 @@ rm16_call.cont3:
 	add	esp, 8
 	jmp	far dword [esp-8]
 
-	global	hello16
-hello16:
-	mov	ax, 0x0003
+	global	setvideomode16
+setvideomode16:
+	mov	ah, 0x00
 	int	0x10
-	mov	ah, 0x03
-	xor	bh, bh
-	int	0x10
-	mov	ax, 0x1301
-	mov	bx, 0x0007
-	mov	cx, msg.end-msg
-	mov	bp, msg
-	int	0x10
-	sti
-	jmp	$
 	retf
 
-	section	.rodata
-
-msg:	db	".:. biefircate ", VERSION, " .:. "
-	db	"hello world from int 0x10", 13, 10
-	db	"system halted, for now", 13, 10
-.end:
+	global	outmem16
+outmem16:
+	push	bp
+	push	ax
+	push	dx
+	mov	ah, 0x0f
+	int	0x10
+	push	bx
+	mov	ah, 0x03
+	int	0x10
+	pop	bx
+	mov	ax, 0x1301
+	mov	bl, 0x07
+	pop	cx
+	pop	bp
+	int	0x10
+	pop	bp
+	retf
 
 	section	.bss
 

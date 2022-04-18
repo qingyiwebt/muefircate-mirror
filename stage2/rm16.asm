@@ -36,6 +36,7 @@
 	extern	mem_alloc, _stext16, _etext16, _sdata16, _end16
 	extern	gdt_desc_cs16, gdt_desc_ds16
 	extern	rm16_call.cont1, rm16_call.rm_cs16, vecs16, NUM_VECS16
+	extern	tb16
 
 	global	rm16_init
 rm16_init:

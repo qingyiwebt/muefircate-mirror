@@ -56,6 +56,7 @@ CPPFLAGS2 += -I $(LAISRCDIR)/include -I $(conf_Srcdir) $(COMMON_CPPFLAGS)
 LDFLAGS2_ORIG := $(LDFLAGS2)
 LDFLAGS2 += $(CFLAGS2) -static -nostdlib -ffreestanding \
     -Wl,--strip-all -Wl,-Map=$(basename $@).map -Wl,--build-id=none
+LDLIBS2 = -lgcc
 
 CC3 = $(patsubst -m32,-m16,$(CC2))
 CFLAGS3 = -m16 $(patsubst -m32,-m16,$(CFLAGS2))
@@ -64,7 +65,7 @@ ASFLAGS3 = $(ASFLAGS2)
 CPPFLAGS3 = $(CPPFLAGS2)
 LDFLAGS3 = $(LDFLAGS2_ORIG) $(CFLAGS3) -static -nostdlib -ffreestanding \
     -Wl,--strip-debug -Wl,-Map=$(basename $@).map -Wl,--build-id=none
-LDLIBS3 = $(LDLIBS2)
+LDLIBS3 =
 
 QEMUFLAGS = -m 224m -serial stdio $(QEMUEXTRAFLAGS)
 QEMUFLAGSXV6 = -hdb xv6/fs.img $(QEMUFLAGS)
@@ -106,7 +107,7 @@ romdumper.o: romdumper.c $(LIBEFI)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 stage1/main.o romdumper.o : CPPFLAGS += -DVERSION='"$(conf_Pkg_ver)"'
-stage2/16/do-rm16-call.o : CPPFLAGS3 += -DVERSION='"$(conf_Pkg_ver)"'
+stage2/main.o : CPPFLAGS2 += -DVERSION='"$(conf_Pkg_ver)"'
 
 stage2/data16.bin: stage2/16.elf
 	objcopy -I elf32-i386 --dump-section .data=$@ $< /dev/null
@@ -115,7 +116,8 @@ stage2/text16.bin: stage2/16.elf
 	objcopy -I elf32-i386 --dump-section .text=$@ $< /dev/null
 
 stage2/16.elf: stage2/16/head.o stage2/16/do-rm16-call.o stage2/16/kb.o \
-    stage2/16/tb16.o stage2/16/time.o stage2/16/vecs16.o stage2/16/16.ld
+	       stage2/16/tb16.o stage2/16/time.o stage2/16/vecs16.o \
+	       stage2/16/16.ld
 	$(CC3) $(LDFLAGS3) -o $@ $(^:%.ld=-T %.ld) $(LDLIBS3)
 
 stage2/16/%.o: stage2/16/%.c
@@ -126,8 +128,9 @@ stage2/16/%.o: stage2/16/%.asm
 	mkdir -p $(@D)
 	$(AS3) $(ASFLAGS3) $(CPPFLAGS3) -o $@ $<
 
-$(STAGE2): stage2/start.o stage2/clib.o stage2/irq.o stage2/main.o \
-    stage2/mem.o stage2/rm16.o stage2/stage2.ld stage2/16.elf
+$(STAGE2): stage2/start.o stage2/clib.o stage2/conio.o stage2/copy-tb.o \
+	   stage2/irq.o stage2/main.o stage2/mem.o stage2/rm16.o \
+	   stage2/stage2.ld stage2/16.elf
 	$(CC2) $(LDFLAGS2) -o $@ \
 	    $(filter-out %.ld %.elf, $^) \
 	    $(patsubst %.ld,-T %.ld,$(filter %.ld,$^)) \

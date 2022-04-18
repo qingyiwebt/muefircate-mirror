@@ -1,4 +1,4 @@
-; Copyright (c) 2021 TK Chia
+; Copyright (c) 2022 TK Chia
 ;
 ; Redistribution and use in source and binary forms, with or without
 ; modification, are permitted provided that the following conditions are
@@ -29,50 +29,23 @@
 
 	section	.text
 
-	global	memcpy
-	global	memmove
-memcpy:
-memmove:
-	push	esi
-	push	edi
-	mov	edi, eax
-	mov	esi, edx
-	cmp	edi, esi
-	ja	.backward
-	je	.done
-	mov	edx, ecx
-	shr	ecx, 2
-	rep movsd
-.finish:
-	mov	cl, dl
-	and	cl, byte 3
-	rep movsb
-	cld
-.done:
-	pop	edi
-	pop	esi
-	ret
-.backward:
-	lea	edi, [edi+ecx-4]
-	lea	esi, [esi+ecx-4]
-	mov	edx, ecx
-	shr	ecx, 2
-	std
-	rep movsd
-	add	edi, byte 3
-	add	esi, byte 3
-	jmp	short .finish
+	extern	tb16
 
-	global	strlen
-strlen:
+	global	copy_to_tb
+copy_to_tb:
 	push	edi
-	mov	edi, eax
-	xor	ecx, ecx
-	dec	ecx
-	mov	al, 0
-	repne scasb
-	inc	ecx
-	not	ecx
-	xchg	ecx, eax
+	xchg	esi, eax
+	mov	edi, tb16
+	mov	cx, fs
+	mov	es, cx
+	mov	ecx, edx
+	shr	ecx, 2
+	rep movsd
+	mov	ecx, edx
+	and	ecx, byte 3
+	rep movsb
+	mov	cx, ds
+	mov	es, cx
+	xchg	esi, eax
 	pop	edi
 	ret
