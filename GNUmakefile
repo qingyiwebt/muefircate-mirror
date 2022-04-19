@@ -67,7 +67,7 @@ LDFLAGS3 = $(LDFLAGS2_ORIG) $(CFLAGS3) -static -nostdlib -ffreestanding \
     -Wl,--strip-debug -Wl,-Map=$(basename $@).map -Wl,--build-id=none
 LDLIBS3 =
 
-QEMUFLAGS = -m 224m -serial stdio $(QEMUEXTRAFLAGS)
+QEMUFLAGS = -m 224m -serial stdio -usb -device qemu-xhci $(QEMUEXTRAFLAGS)
 QEMUFLAGSXV6 = -hdb xv6/fs.img $(QEMUFLAGS)
 
 ifneq "" "$(SBSIGN_MOK)"

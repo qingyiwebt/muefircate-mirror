@@ -257,6 +257,9 @@ static inline void wr_cr4(uint32_t v)
 	__asm volatile("movl %0, %%cr4" : : "r" (v) : "memory");
 }
 
+#define IO_WAIT \
+	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)0x80))
+
 /* Read a byte from an I/O port. */
 static inline uint8_t inp(uint16_t p)
 {
@@ -265,11 +268,15 @@ static inline uint8_t inp(uint16_t p)
 	return v;
 }
 
+#define IO_WAIT \
+	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)0x80))
+
 /* Read a byte from an I/O port, with a small wait. */
 static inline uint8_t inp_w(uint16_t p)
 {
-	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)0x80));
-	return inp(p);
+	uint8_t v = inp(p);
+	IO_WAIT;
+	return v;
 }
 
 /* Write a byte to an I/O port. */
@@ -282,8 +289,39 @@ static inline void outp(uint16_t p, uint8_t v)
 static inline void outp_w(uint16_t p, uint8_t v)
 {
 	outp(p, v);
-	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)0x80));
+	IO_WAIT;
 }
+
+/* Read a longword from an I/O port. */
+static inline uint8_t inpd(uint16_t p)
+{
+	uint32_t v;
+	__asm volatile("inl %1, %0" : "=a" (v) : "Nd" (p));
+	return v;
+}
+
+/* Read a longword from an I/O port, with a small wait. */
+static inline uint32_t inpd_w(uint16_t p)
+{
+	uint32_t v = inpd(p);
+	IO_WAIT;
+	return v;
+}
+
+/* Write a longword to an I/O port. */
+static inline void outpd(uint16_t p, uint32_t v)
+{
+	__asm volatile("outl %1, %0" : : "Nd" (p), "a" (v));
+}
+
+/* Write a longword to an I/O port, then add a small wait. */
+static inline void outpd_w(uint16_t p, uint32_t v)
+{
+	outpd(p, v);
+	IO_WAIT;
+}
+
+#undef IO_WAIT
 
 /* Disable interrupts. */
 static inline void cli(void)

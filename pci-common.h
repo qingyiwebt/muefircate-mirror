@@ -39,8 +39,8 @@
  * This header file needs to work in both 32-bit & 64-bit compilation modes.
  */
 
-#ifndef H_PCI
-#define H_PCI
+#ifndef H_PCI_COMMON
+#define H_PCI_COMMON
 
 #include <inttypes.h>
 #include "common.h"
@@ -52,9 +52,9 @@
 #define PCI_CIF_VID_VGA		0x03000000U /* VGA controller */
 #define PCI_CIF_VID_8514	0x03000100U /* 8514-compatible controller */
 #define PCI_CIF_VID_XGA		0x03010000U /* XGA controller */
-#define PCI_CIF_BUS_USB_UHCI	0x0c030000U /* USB XHCI controller */
-#define PCI_CIF_BUS_USB_OHCI	0x0c031000U /* USB XHCI controller */
-#define PCI_CIF_BUS_USB_EHCI	0x0c032000U /* USB XHCI controller */
+#define PCI_CIF_BUS_USB_UHCI	0x0c030000U /* USB UHCI controller */
+#define PCI_CIF_BUS_USB_OHCI	0x0c031000U /* USB OHCI controller */
+#define PCI_CIF_BUS_USB_EHCI	0x0c032000U /* USB EHCI controller */
 #define PCI_CIF_BUS_USB_XHCI	0x0c033000U /* USB XHCI controller */
 
 /* Option ROM image header. */

@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "stage1/stage1.h"
-#include "pci.h"
+#include "pci-common.h"
 
 static bool enable_legacy_vga(EFI_PCI_IO_PROTOCOL *io, UINT32 class_if,
 			      UINT64 attrs, UINT64 supports, UINT64 *p_enables)

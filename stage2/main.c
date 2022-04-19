@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pci.h"
+#include "pci-common.h"
 #include "stage2/stage2.h"
 
 static void rimg_init(bparm_t *bparms, bool init_vga)
