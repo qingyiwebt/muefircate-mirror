@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021--2022 TK Chia
+ * Copyright (c) 2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -31,53 +31,51 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pci-common.h"
 #include "stage2/stage2.h"
+#include "stage2/pci.h"
 
-static void rimg_init(bparm_t *bparms, bool init_vga)
+uint32_t in_pci_d_maybe_unaligned(uint32_t locn, uint8_t off)
 {
-	bparm_t *bp;
-	for (bp = bparms; bp; bp = bp->next) {
-		uint16_t rimg_seg;
-		bdat_pci_dev_t *pd;
-		bool do_init;
-		if (bp->type != BP_PCID)
-			continue;
-		pd = &bp->u->pci_dev;
-		switch (pd->class_if) {
-		    case PCI_CIF_VID_VGA:
-		    case PCI_CIF_VID_8514:
-		    case PCI_CIF_VID_XGA:
-			do_init = init_vga;
-			break;
-		    default:
-			do_init = !init_vga;
-		}
-		if (!do_init)
-			continue;
-		rimg_seg = pd->rimg_seg;
-		if (!rimg_seg)
-			continue;
-		rm16_call(pd->pci_locn, 0, 0, pd->rimg_rt_seg,
-		    MK_FP16(rimg_seg, 0x0003));
+	uint8_t aoff = off & ~(uint8_t)3;
+	switch (off & 3) {
+	    default:
+		return in_pci_d_aligned(locn, off);
+	    case 1:
+		return in_pci_d_aligned(locn, aoff) >> 8 |
+		       in_pci_d_aligned(locn, aoff + 4) << 24;
+	    case 2:
+		return in_pci_d_aligned(locn, aoff) >> 16 |
+		       in_pci_d_aligned(locn, aoff + 4) << 16;
+	    case 3:
+		return in_pci_d_aligned(locn, aoff) >> 24 |
+		       in_pci_d_aligned(locn, aoff + 4) << 8;
 	}
 }
 
-static void hello(void)
+void out_pci_d_maybe_unaligned(uint32_t locn, uint8_t off, uint32_t v)
 {
-	extern void setvideomode16(/* ... */);
-	rm16_cs_call(3, 0, 0, 0, setvideomode16);
-	cputs(".:. biefircate " VERSION " .:. hello world from int 0x10\n");
-}
-
-void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
-{
-	mem_init(bparms);
-	rm16_init();
-	irq_init(bparms);
-	rimg_init(bparms, true);
-	hello();
-	usb_init(bparms);
-	rimg_init(bparms, false);
-	hlt();
+	uint8_t aoff = off & ~(uint8_t)3;
+	switch (off & 3) {
+	    default:
+		out_pci_d_aligned(locn, off, v);
+	    case 1:
+		out_pci_d_aligned(locn, aoff,
+		    (in_pci_d_aligned(locn, aoff) & 0x000000ffU) | v << 8);
+		out_pci_d_aligned(locn, aoff + 4,
+		    (in_pci_d_aligned(locn, aoff + 4) & 0xffffff00U) |
+		    v >> 24);
+		break;
+	    case 2:
+		out_pci_d_aligned(locn, aoff,
+		    (in_pci_d_aligned(locn, aoff) & 0x0000ffffU) | v << 16);
+		out_pci_d_aligned(locn, aoff + 4,
+		    (in_pci_d_aligned(locn, aoff + 4) & 0xffff0000U) |
+		    v>> 16);
+		break;
+	    case 3:
+		out_pci_d_aligned(locn, aoff,
+		    (in_pci_d_aligned(locn, aoff) & 0x00ffffffU) | v << 24);
+		out_pci_d_aligned(locn, aoff + 4,
+		    (in_pci_d_aligned(locn, aoff + 4) & 0xff000000U) | v >> 8);
+	}
 }

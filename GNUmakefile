@@ -56,7 +56,7 @@ CPPFLAGS2 += -I $(LAISRCDIR)/include -I $(conf_Srcdir) $(COMMON_CPPFLAGS)
 LDFLAGS2_ORIG := $(LDFLAGS2)
 LDFLAGS2 += $(CFLAGS2) -static -nostdlib -ffreestanding \
     -Wl,--strip-all -Wl,-Map=$(basename $@).map -Wl,--build-id=none
-LDLIBS2 = -lgcc
+LDLIBS2 =
 
 CC3 = $(patsubst -m32,-m16,$(CC2))
 CFLAGS3 = -m16 $(patsubst -m32,-m16,$(CFLAGS2))
@@ -67,7 +67,8 @@ LDFLAGS3 = $(LDFLAGS2_ORIG) $(CFLAGS3) -static -nostdlib -ffreestanding \
     -Wl,--strip-debug -Wl,-Map=$(basename $@).map -Wl,--build-id=none
 LDLIBS3 =
 
-QEMUFLAGS = -m 224m -serial stdio -usb -device qemu-xhci $(QEMUEXTRAFLAGS)
+QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
+	    $(QEMUEXTRAFLAGS)
 QEMUFLAGSXV6 = -hdb xv6/fs.img $(QEMUFLAGS)
 
 ifneq "" "$(SBSIGN_MOK)"
@@ -129,8 +130,8 @@ stage2/16/%.o: stage2/16/%.asm
 	$(AS3) $(ASFLAGS3) $(CPPFLAGS3) -o $@ $<
 
 $(STAGE2): stage2/start.o stage2/clib.o stage2/conio.o stage2/copy-tb.o \
-	   stage2/irq.o stage2/main.o stage2/mem.o stage2/rm16.o \
-	   stage2/stage2.ld stage2/16.elf
+	   stage2/irq.o stage2/main.o stage2/mem.o stage2/pci.o stage2/rm16.o \
+	   stage2/usb.o stage2/stage2.ld stage2/16.elf
 	$(CC2) $(LDFLAGS2) -o $@ \
 	    $(filter-out %.ld %.elf, $^) \
 	    $(patsubst %.ld,-T %.ld,$(filter %.ld,$^)) \

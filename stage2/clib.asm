@@ -62,17 +62,3 @@ memmove:
 	add	edi, byte 3
 	add	esi, byte 3
 	jmp	short .finish
-
-	global	strlen
-strlen:
-	push	edi
-	mov	edi, eax
-	xor	ecx, ecx
-	dec	ecx
-	mov	al, 0
-	repne scasb
-	inc	ecx
-	not	ecx
-	xchg	ecx, eax
-	pop	edi
-	ret

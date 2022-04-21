@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021--2022 TK Chia
+ * Copyright (c) 2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -27,57 +27,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include "pci-common.h"
+#ifndef H_STAGE2_PCI
+#define H_STAGE2_PCI
+
 #include "stage2/stage2.h"
+#include "pci-common.h"
 
-static void rimg_init(bparm_t *bparms, bool init_vga)
+#define PCI_ADDR	0x0cf8
+#define PCI_DATA	0x0cfc
+
+/* pci.c functions. */
+
+extern uint32_t in_pci_d_maybe_unaligned(uint32_t, uint8_t);
+extern void out_pci_d_maybe_unaligned(uint32_t, uint8_t, uint32_t);
+
+/* Read an aligned longword from a PCI device's PCI configuration space. */
+static inline uint32_t in_pci_d_aligned(uint32_t locn, uint8_t off)
 {
-	bparm_t *bp;
-	for (bp = bparms; bp; bp = bp->next) {
-		uint16_t rimg_seg;
-		bdat_pci_dev_t *pd;
-		bool do_init;
-		if (bp->type != BP_PCID)
-			continue;
-		pd = &bp->u->pci_dev;
-		switch (pd->class_if) {
-		    case PCI_CIF_VID_VGA:
-		    case PCI_CIF_VID_8514:
-		    case PCI_CIF_VID_XGA:
-			do_init = init_vga;
-			break;
-		    default:
-			do_init = !init_vga;
-		}
-		if (!do_init)
-			continue;
-		rimg_seg = pd->rimg_seg;
-		if (!rimg_seg)
-			continue;
-		rm16_call(pd->pci_locn, 0, 0, pd->rimg_rt_seg,
-		    MK_FP16(rimg_seg, 0x0003));
-	}
+	outpd_w(PCI_ADDR, 1 << 31 | (locn & 0xffffU) << 8 | off);
+	return inpd_w(PCI_DATA);
 }
 
-static void hello(void)
+/* Read a longword from a PCI device's PCI configuration space. */
+static inline uint32_t in_pci_d(uint32_t locn, uint8_t off)
 {
-	extern void setvideomode16(/* ... */);
-	rm16_cs_call(3, 0, 0, 0, setvideomode16);
-	cputs(".:. biefircate " VERSION " .:. hello world from int 0x10\n");
+	if (__builtin_constant_p (off & 3) && (off & 3) == 0)
+		return in_pci_d_aligned(locn, off);
+	else
+		return in_pci_d_maybe_unaligned(locn, off);
 }
 
-void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
+/* Write an aligned longword to a PCI device's PCI configuration space. */
+static inline void out_pci_d_aligned(uint32_t locn, uint8_t off, uint32_t v)
 {
-	mem_init(bparms);
-	rm16_init();
-	irq_init(bparms);
-	rimg_init(bparms, true);
-	hello();
-	usb_init(bparms);
-	rimg_init(bparms, false);
-	hlt();
+	outpd_w(PCI_ADDR, 1 << 31 | locn << 8 | off);
+	outpd_w(PCI_DATA, v);
 }
+
+/* Write a longword to a PCI device's PCI configuration space. */
+static inline void out_pci_d(uint32_t locn, uint8_t off, uint32_t v)
+{
+	if (__builtin_constant_p (off & 3) && (off & 3) == 0)
+		out_pci_d_aligned(locn, off, v);
+	else
+		out_pci_d_maybe_unaligned(locn, off, v);
+}
+
+#endif

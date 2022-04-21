@@ -74,6 +74,10 @@ extern void rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
 		      farptr16_t callee);
 extern void copy_to_tb(const void *, size_t);
 
+/* usb.c functions. */
+
+extern void usb_init(bparm_t *);
+
 /* 16/tb16.c data. */
 
 extern DATA16 char tb16[TB_SZ];
@@ -293,7 +297,7 @@ static inline void outp_w(uint16_t p, uint8_t v)
 }
 
 /* Read a longword from an I/O port. */
-static inline uint8_t inpd(uint16_t p)
+static inline uint32_t inpd(uint16_t p)
 {
 	uint32_t v;
 	__asm volatile("inl %1, %0" : "=a" (v) : "Nd" (p));

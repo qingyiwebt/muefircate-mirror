@@ -31,7 +31,13 @@
 #define NANOPRINTF_USE_FIELD_WIDTH_FORMAT_SPECIFIERS 1
 #define NANOPRINTF_USE_PRECISION_FORMAT_SPECIFIERS 1
 #define NANOPRINTF_USE_FLOAT_FORMAT_SPECIFIERS 0
-#define NANOPRINTF_USE_LARGE_FORMAT_SPECIFIERS 1
+/*
+ * Having "large" length modifiers (e.g. %jx) would be nice.  For now
+ * though, this means we would need to implement the __udivmoddi4 64-bit
+ * integer division routine for our register calling convention, & this
+ * seems rather overkill.  -- 20220421
+ */
+#define NANOPRINTF_USE_LARGE_FORMAT_SPECIFIERS 0
 #define NANOPRINTF_USE_BINARY_FORMAT_SPECIFIERS 0
 #define NANOPRINTF_USE_WRITEBACK_FORMAT_SPECIFIERS 0
 #define NANOPRINTF_IMPLEMENTATION 1
@@ -43,7 +49,6 @@ struct our_pf_ctx {
 	size_t pos;
 	char buf[TB_SZ];
 };
-
 
 static void outmem_1(const char *str, size_t n)
 {
@@ -65,28 +70,16 @@ static void our_putc_1(int c, void *pv)
 
 static void our_putc(int c, void *pv)
 {
-	if (c == '\n')
+	if ((char)c == '\n')
 		our_putc_1('\r', pv);
 	our_putc_1(c, pv);
-}
-
-int cputs(const char *str)
-{
-	size_t n = strlen(str);
-	while (n > TB_SZ) {
-		outmem_1(str, TB_SZ);
-		n -= TB_SZ;
-		str += TB_SZ;
-	}
-	outmem_1(str, n);
-	return 0;
 }
 
 int vcprintf(const char *fmt, va_list ap)
 {
 	struct our_pf_ctx ctx = { 0, };
 	int res = npf_vpprintf(our_putc, &ctx, fmt, ap);
-	if (res >= 0 && ctx.pos) 
+	if (res >= 0 && ctx.pos)
 		outmem_1(ctx.buf, ctx.pos);
 	return res;
 }
@@ -99,4 +92,9 @@ int cprintf(const char *fmt, ...)
 	res = vcprintf(fmt, ap);
 	va_end(ap);
 	return res;
+}
+
+int cputs(const char *str)
+{
+	return cprintf("%s", str);
 }

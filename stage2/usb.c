@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021--2022 TK Chia
+ * Copyright (c) 2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -31,53 +31,33 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pci-common.h"
 #include "stage2/stage2.h"
+#include "stage2/pci.h"
 
-static void rimg_init(bparm_t *bparms, bool init_vga)
+static void ehci_init_bus(bdat_pci_dev_t *pd)
+{
+	uint32_t locn = pd->pci_locn, base;
+	unsigned seg = locn >> 16, bus = (locn >> 8) & 0xff,
+		 dev = (locn >> 3) & 0x1f, fn = locn & 7;
+	base = in_pci_d(locn, 0x10);
+	cprintf("USB EHCI @ %04x:%02x:%02x.%x  USBBASE: @0x%" PRIx32,
+	    seg, bus, dev, fn, base);
+}
+
+void usb_init(bparm_t *bparms)
 {
 	bparm_t *bp;
 	for (bp = bparms; bp; bp = bp->next) {
-		uint16_t rimg_seg;
 		bdat_pci_dev_t *pd;
-		bool do_init;
 		if (bp->type != BP_PCID)
 			continue;
 		pd = &bp->u->pci_dev;
 		switch (pd->class_if) {
-		    case PCI_CIF_VID_VGA:
-		    case PCI_CIF_VID_8514:
-		    case PCI_CIF_VID_XGA:
-			do_init = init_vga;
+		    case PCI_CIF_BUS_USB_EHCI:
+			ehci_init_bus(pd);
 			break;
 		    default:
-			do_init = !init_vga;
+			;
 		}
-		if (!do_init)
-			continue;
-		rimg_seg = pd->rimg_seg;
-		if (!rimg_seg)
-			continue;
-		rm16_call(pd->pci_locn, 0, 0, pd->rimg_rt_seg,
-		    MK_FP16(rimg_seg, 0x0003));
 	}
-}
-
-static void hello(void)
-{
-	extern void setvideomode16(/* ... */);
-	rm16_cs_call(3, 0, 0, 0, setvideomode16);
-	cputs(".:. biefircate " VERSION " .:. hello world from int 0x10\n");
-}
-
-void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
-{
-	mem_init(bparms);
-	rm16_init();
-	irq_init(bparms);
-	rimg_init(bparms, true);
-	hello();
-	usb_init(bparms);
-	rimg_init(bparms, false);
-	hlt();
 }
