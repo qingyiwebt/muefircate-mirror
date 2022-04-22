@@ -34,6 +34,12 @@
 #include "stage2/stage2.h"
 #include "stage2/pci.h"
 
+#define EHCI_EECP_LEGACY		0x01
+#define EHCI_USBLEGSUP_BIOS_OWNED	(1UL << 16)
+#define EHCI_USBLEGSUP_OS_OWNED		(1UL << 24)
+#define EHCI_USBLEGCTLSTS_SMI_USB	(1UL <<  0)
+#define EHCI_USBLEGCTLSTS_SMI_OS_ENA	(1UL << 13)
+
 /* EHCI Host Controller Capability Registers. */
 typedef volatile struct __attribute__((packed)) {
 	uint8_t CAPLENGTH;		/* capability registers length */
@@ -42,6 +48,31 @@ typedef volatile struct __attribute__((packed)) {
 	uint32_t HCSPARAMS;		/* structural parameters */
 	uint32_t HCCPARAMS;		/* capability parameters */
 } usb_ehci_t;
+
+static void ehci_start_legacy(uint32_t locn, uint32_t hccp)
+{
+	uint8_t off = (uint8_t)(hccp >> 8);
+	while (off >= 0x40) {
+		uint32_t cap1 = in_pci_d(locn, off);
+		uint8_t cap_id = (uint8_t)cap1;
+		if (cap_id == EHCI_EECP_LEGACY) {
+			uint32_t cap2 = in_pci_d(locn, off + 4);
+			uint32_t new_cap1 = cap1 | EHCI_USBLEGSUP_OS_OWNED;
+			uint32_t new_cap2 = cap2 | EHCI_USBLEGCTLSTS_SMI_USB
+					    | EHCI_USBLEGCTLSTS_SMI_OS_ENA;
+			if (new_cap1 == cap1 && new_cap2 == cap2)
+				continue;
+			cprintf("  USBLEGCTLSTS: 0x%" PRIx32
+				  " \x1a 0x%" PRIx32, cap2, new_cap2);
+			out_pci_d(locn, off + 4, new_cap2);
+			cprintf("  USBLEGSUP: 0x%" PRIx32
+				  " \x1a 0x%" PRIx32 "\n", cap1, new_cap1);
+			out_pci_d(locn, off, new_cap1);
+			return;
+		}
+		off = (uint8_t)(cap1 >> 8);
+	}
+}
 
 static void ehci_init_bus(bdat_pci_dev_t *pd)
 {
@@ -58,6 +89,7 @@ static void ehci_init_bus(bdat_pci_dev_t *pd)
 	cprintf("  CAPLENGTH: 0x%" PRIx8 "  HCIVERSION: 0x%" PRIx16 "  "
 		  "HCSPARAMS: 0x%" PRIx32 "  HCCPARAMS: 0x%" PRIx32 "\n",
 	    hc->CAPLENGTH, hc->HCIVERSION, hc->HCSPARAMS, hccp);
+	ehci_start_legacy(locn, hccp);
 }
 
 void usb_init(bparm_t *bparms)
