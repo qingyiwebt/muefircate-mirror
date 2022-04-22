@@ -48,6 +48,25 @@
 
 ---
 
+=== Rough to-do list (?!?) for something approaching a "minimum viable product"
+
+:fn-bzt-20: footnote:bzt-20[Bzt et al.  GOP.  OSDev Wiki, 2020.  Retrieved on 22 April 2022.]
+
+  * ☐ Screen output
+  ** ☑ via VGA option ROM, if present
+  ** ☐ via framebuffer from UEFI bootloader{fn-bzt-20}
+  * ☐ Keyboard input
+  ** ☑ via PS/2 keyboard — partially working
+  ** ☐ via USB keyboard emulating legacy PS/2 keyboard using SMI
+  *** ☐ OHCI
+  *** ☐ UHCI
+  *** ☑ EHCI — partially working
+  *** ☐ XHCI
+  ** ☐ via USB keyboard directly
+  * ☐ Storage drive I/O
+
+---
+
 === Other notes
 
 :fn-abraham-20: footnote:abraham-20[https://github.com/eyalabraham/new-xt-bios.  Retrieved on 28 August 2021.]
