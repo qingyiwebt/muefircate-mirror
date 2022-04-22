@@ -116,4 +116,37 @@ static inline uint32_t pci_make_id(uint16_t vendor, uint16_t dev)
 					   VirtualBox VM hypervisor) */
 #define PCI_DEVICE_ID_VBOX_VESA	0xbeef	/* VirtualBox graphics card */
 
+/* Say whether a PCI Base Address Register (BAR) value is for an I/O port. */
+static inline bool pci_bar_is_io(uint32_t bar)
+{
+	return (bar & 1) != 0;
+}
+
+/* Say whether a PCI BAR value is for (part of) a 64-bit memory address. */
+static inline bool pci_bar_is_mem64(uint32_t bar)
+{
+	return (bar & 7) == 4;
+}
+
+/* Say whether a PCI BAR value is for a 32-bit memory address. */
+static inline bool pci_bar_is_mem32(uint32_t bar)
+{
+	return (bar & 7) == 0;
+}
+
+/* Say whether a PCI BAR value is for a prefetchable memory block. */
+static inline bool pci_bar_is_mempf(uint32_t bar)
+{
+	return (bar & 9) == 8;
+}
+
+/* Return the address portion of a PCI BAR value. */
+static inline uint32_t pci_bar_addr(uint32_t bar)
+{
+	if (pci_bar_is_io(bar))
+		return bar & 0xfffffffcU;
+	else
+		return bar & 0xfffffff0U;
+}
+
 #endif

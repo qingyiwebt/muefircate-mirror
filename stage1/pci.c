@@ -338,33 +338,22 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 			got_bar = true;
 			info(u"    BAR:");
 		}
-		switch (bar & 0x00000007U) {
-		    case 0x00000000U:
-			/* 32-bit address in memory space */
-			infof(u" {@0x%x%s}", bar & 0xfffffff0U,
-			    bar & 0x00000008U ? u" pf" : u"");
-				break;
-		    case 0x00000004U:
-			/* 64-bit address in memory space */
+		if (pci_bar_is_io(bar))
+			infof(u" {\u2191""0x%x}", pci_bar_addr(bar));
+		else if (pci_bar_is_mem64(bar)) {
 			if (idx == 9)
 				error(u"bogus 64-bit PCI BAR");
 			++idx;
 			addr = pci_conf[idx];
 			addr <<= 32;
-			addr |= bar & 0xfffffff0U;
+			addr |= pci_bar_addr(bar);
 			infof(u" {@0x%lx%s}", addr,
-			    bar & 0x00000008U ? u" pf" : u"");
-			break;
-		    case 0x00000001U:
-		    case 0x00000003U:
-		    case 0x00000005U:
-		    case 0x00000007U:
-			/* address in I/O space */
-			infof(u" {\u2191""0x%x}", bar & 0xfffffffcU);
-			break;
-		    default:
+			    pci_bar_is_mempf(bar)? u" pf" : u"");
+		} else if (pci_bar_is_mem32(bar))
+			infof(u" {@0x%x%s}", pci_bar_addr(bar),
+			    pci_bar_is_mempf(bar) ? u" pf" : u"");
+		else
 			error(u"unhandled 16-bit PCI BAR");
-		}
 	}
 	if (got_bar)
 		info(u"\r\n");

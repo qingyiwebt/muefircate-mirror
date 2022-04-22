@@ -34,14 +34,30 @@
 #include "stage2/stage2.h"
 #include "stage2/pci.h"
 
+/* EHCI Host Controller Capability Registers. */
+typedef volatile struct __attribute__((packed)) {
+	uint8_t CAPLENGTH;		/* capability registers length */
+	uint8_t : 8;			/* reserved */
+	uint16_t HCIVERSION;		/* interface version number */
+	uint32_t HCSPARAMS;		/* structural parameters */
+	uint32_t HCCPARAMS;		/* capability parameters */
+} usb_ehci_t;
+
 static void ehci_init_bus(bdat_pci_dev_t *pd)
 {
-	uint32_t locn = pd->pci_locn, base;
+	uint32_t locn = pd->pci_locn, hccp;
+	usb_ehci_t *hc;
+	uint64_t hc_pa;
 	unsigned seg = locn >> 16, bus = (locn >> 8) & 0xff,
 		 dev = (locn >> 3) & 0x1f, fn = locn & 7;
-	base = in_pci_d(locn, 0x10);
-	cprintf("USB EHCI @ %04x:%02x:%02x.%x  USBBASE: @0x%" PRIx32,
-	    seg, bus, dev, fn, base);
+	hc = pci_va_map(locn, 0, 0x200, &hc_pa);
+	cprintf("USB EHCI @ %04x:%02x:%02x.%x  "
+		"USBBASE: @0x%" PRIx32 "%08" PRIx32 "\n",
+	    seg, bus, dev, fn, (uint32_t)(hc_pa >> 32), (uint32_t)hc_pa);
+	hccp = hc->HCCPARAMS;
+	cprintf("  CAPLENGTH: 0x%" PRIx8 "  HCIVERSION: 0x%" PRIx16 "  "
+		  "HCSPARAMS: 0x%" PRIx32 "  HCCPARAMS: 0x%" PRIx32 "\n",
+	    hc->CAPLENGTH, hc->HCIVERSION, hc->HCSPARAMS, hccp);
 }
 
 void usb_init(bparm_t *bparms)

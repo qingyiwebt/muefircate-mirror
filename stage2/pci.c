@@ -79,3 +79,25 @@ void out_pci_d_maybe_unaligned(uint32_t locn, uint8_t off, uint32_t v)
 		    (in_pci_d_aligned(locn, aoff + 4) & 0xff000000U) | v >> 8);
 	}
 }
+
+/*
+ * Map an area of memory given by a PCI Base Address Register (BAR) --- or 2
+ * BARs, for a 64-bit memory address --- into our 32-bit virtual address
+ * space.  If `p_pa' is non-null, set *`p_pa' to the physical address of the
+ * memory block.
+ */
+void *pci_va_map(uint32_t locn, uint8_t which, size_t sz, uint64_t *p_pa)
+{
+	uint8_t off = 0x10 + 4 * which;
+	uint32_t lo_bar = in_pci_d_aligned(locn, off), hi_bar = 0;
+	uint64_t pa;
+	unsigned pte_flags = 0;
+	if (pci_bar_is_mem64(lo_bar))
+		hi_bar = in_pci_d_aligned(locn, off + 4);
+	pa = (uint64_t)hi_bar << 32 | pci_bar_addr(lo_bar);
+	if (p_pa)
+		*p_pa = pa;
+	if (!pci_bar_is_mempf(lo_bar))
+		pte_flags = PTE_CD;
+	return mem_va_map(pa, sz, pte_flags);
+}

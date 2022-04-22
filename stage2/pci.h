@@ -40,6 +40,7 @@
 
 extern uint32_t in_pci_d_maybe_unaligned(uint32_t, uint8_t);
 extern void out_pci_d_maybe_unaligned(uint32_t, uint8_t, uint32_t);
+extern void *pci_va_map(uint32_t, uint8_t, size_t, uint64_t *);
 
 /* Read an aligned longword from a PCI device's PCI configuration space. */
 static inline uint32_t in_pci_d_aligned(uint32_t locn, uint8_t off)
@@ -51,7 +52,7 @@ static inline uint32_t in_pci_d_aligned(uint32_t locn, uint8_t off)
 /* Read a longword from a PCI device's PCI configuration space. */
 static inline uint32_t in_pci_d(uint32_t locn, uint8_t off)
 {
-	if (__builtin_constant_p (off & 3) && (off & 3) == 0)
+	if (__builtin_constant_p(off & 3) && (off & 3) == 0)
 		return in_pci_d_aligned(locn, off);
 	else
 		return in_pci_d_maybe_unaligned(locn, off);
@@ -67,7 +68,7 @@ static inline void out_pci_d_aligned(uint32_t locn, uint8_t off, uint32_t v)
 /* Write a longword to a PCI device's PCI configuration space. */
 static inline void out_pci_d(uint32_t locn, uint8_t off, uint32_t v)
 {
-	if (__builtin_constant_p (off & 3) && (off & 3) == 0)
+	if (__builtin_constant_p(off & 3) && (off & 3) == 0)
 		out_pci_d_aligned(locn, off, v);
 	else
 		out_pci_d_maybe_unaligned(locn, off, v);
