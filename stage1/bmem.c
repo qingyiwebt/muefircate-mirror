@@ -186,7 +186,7 @@ void bmem_init(void)
 	} while (page_count);
 	/*
 	 * Group the available base memory into blocks for ease of tracking. 
-	 * Do not count the page at address 0, even if we successfull
+	 * Do not count the page at address 0, even if we successfully
 	 * allocated it.
 	 */
 	info(u"avail. base mem. blocks:");
@@ -238,9 +238,9 @@ void bmem_init(void)
 				break;
 			idx = start / EFI_PAGE_SIZE;
 			end_idx = idx + desc->NumberOfPages;
-			end = end_idx * EFI_PAGE_SIZE;
 			if (end_idx > BMEM_MAX_ADDR / EFI_PAGE_SIZE)
 				end_idx = BMEM_MAX_ADDR / EFI_PAGE_SIZE;
+			end = end_idx * EFI_PAGE_SIZE;
 			if ((num_blks + num_extra_blks) % 4 == 0)
 				info(u"\r\n");
 			infof(u"  [@0x%lx~@0x%lx]", start, end - 1);
@@ -252,6 +252,43 @@ void bmem_init(void)
 			bmem_uefi_attr &= desc->Attribute;
 		}
 	}
+	if (!num_blks && !num_extra_blks)
+		info(u" none");
+	/*
+	 * For good measure, dump information about memory blocks which are
+	 * currently reserved & will _not_ be available even after we exit
+	 * boot services...
+	 */
+	info(u"\r\n"
+	      "rsvd. base mem. blocks:");
+	num_extra_blks = 0;
+	FOR_EACH_MEM_DESC(desc, descs, desc_sz, num_ents, ent_iter) {
+		switch (desc->Type) {
+		    case EfiLoaderCode:
+		    case EfiLoaderData:
+		    case EfiBootServicesCode:
+		    case EfiBootServicesData:
+		    case EfiConventionalMemory:
+			break;
+		    default:
+			start = desc->PhysicalStart;
+			if (start >= BMEM_MAX_ADDR)
+				break;
+			idx = start / EFI_PAGE_SIZE;
+			if (bvec_test(&avail, idx))
+				break;
+			end_idx = idx + desc->NumberOfPages;
+			if (end_idx > BMEM_MAX_ADDR / EFI_PAGE_SIZE)
+				end_idx = BMEM_MAX_ADDR / EFI_PAGE_SIZE;
+			end = end_idx * EFI_PAGE_SIZE;
+			if (num_extra_blks % 4 == 0)
+				info(u"\r\n");
+			infof(u"  @0x%lx~@0x%lx", start, end - 1);
+			++num_extra_blks;
+		}
+	}
+	if (!num_extra_blks)
+		info(u" none");
 	info(u"\r\n");
 	idx = 0;
 	while (idx < BMEM_MAX_ADDR / EFI_PAGE_SIZE && bvec_test(&avail, idx))
