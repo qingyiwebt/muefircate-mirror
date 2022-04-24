@@ -64,6 +64,10 @@
   *** ☐ XHCI
   ** ☐ via USB keyboard directly
   * ☐ Storage drive I/O
+  * ☐ Time-keeping — useful-to-have capability for interacting with other devices e.g. keyboard and storage (!)
+  ** ☐ via legacy PIT and/or CMOS RTC
+  ** ☐ via time stamp counter (rdtsc etc.)
+  ** ☐ via HPET
 
 ---
 
