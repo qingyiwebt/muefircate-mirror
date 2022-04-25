@@ -190,6 +190,11 @@ static void get_rimg(bdat_pci_dev_t *bd, const void *rimg, uint32_t sz,
 	bd->rimg_seg = bd->rimg_rt_seg = ptr_to_rm_seg(rimg_copy);
 }
 
+static void get_rimg_from_file(bdat_pci_dev_t *bd)
+{
+	bd->rimg_seg = bd->rimg_rt_seg = bd->rimg_sz = 0;
+}
+
 static void get_rimg_from_pci_io(bdat_pci_dev_t *bd, EFI_PCI_IO_PROTOCOL *io)
 {
 	void *rimg = io->RomImage;
@@ -303,11 +308,14 @@ static bdat_pci_dev_t *process_one_pci_io(EFI_PCI_IO_PROTOCOL *io,
 	bd->pci_locn = seg << 16 | bus << 8 | dev << 3 | fn;
 	bd->pci_id = pci_id;
 	bd->class_if = class_if;
-	get_rimg_from_pci_io(bd, io);
+	get_rimg_from_file(bd);
 	if (!bd->rimg_seg) {
-		get_rimg_from_fvs(bd);
-		if (!bd->rimg_seg)
-			get_rimg_special_case(bd);
+		get_rimg_from_pci_io(bd, io);
+		if (!bd->rimg_seg) {
+			get_rimg_from_fvs(bd);
+			if (!bd->rimg_seg)
+				get_rimg_special_case(bd);
+		}
 	}
 	/*
 	 * If this is a VGA or XGA display controller, & there is an option

@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "acpi.h"
+#include "apic.h"
 #include "common.h"
 #include "stage2/stage2.h"
 
@@ -77,22 +78,6 @@
 #define PITC_BCD	0x01		/* BCD (vs. binary) mode */
 
 #define ALIGN_APIC	__attribute__((aligned(0x10)))
-
-/* I/O APIC memory-mapped registers. */
-typedef volatile struct __attribute__((packed)) {
-	uint32_t IOREGSEL ALIGN_APIC;	/* 0x0000 --- I/O register select */
-	uint32_t IOREGWIN ALIGN_APIC;	/* 0x0010 --- I/O window */
-} ioapic_t;
-
-/* I/O APIC indirectly-addressed registers --- ioapic_t::IOREGSEL values. */
-#define IOAPICID	0x00		/* identification */
-#define IOAPICVER	0x01		/* version */
-#define IOAPICARB	0x02		/* arbitration */
-#define IOREDTBLLO(idx)	(0x10 + 2 * (idx))  /* I/O redirection table */
-#define IOREDTBLHI(idx)	(0x10 + 2 * (idx) + 1)
-
-/* Field values for I/O APIC redirection table entries. */
-#define IOAPIC_RTLO_MASKED 0x00010000U	/* whether interrupt is masked */
 
 /*
  * Map an entire ACPI system description table from physical memory into

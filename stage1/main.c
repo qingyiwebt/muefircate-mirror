@@ -31,6 +31,7 @@
 #include <string.h>
 #include "stage1/stage1.h"
 #ifdef XV6_COMPAT
+#   include "apic.h"
 #   include "mp.h"
 #endif
 
@@ -290,22 +291,6 @@ static uint64_t rdmsr(uint32_t idx)
 	return (uint64_t)hi << 32 | lo;
 }
 
-static void cpuid(uint32_t leaf,
-		  uint32_t *pa, uint32_t *pb, uint32_t *pc, uint32_t *pd)
-{
-	uint32_t a, b, c, d;
-	__asm volatile("cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d)
-			       : "0" (leaf));
-	if (pa)
-		*pa = a;
-	if (pb)
-		*pb = b;
-	if (pc)
-		*pc = c;
-	if (pd)
-		*pd = d;
-}
-
 static void fake_mp_table(void)
 {
 	/*
@@ -338,7 +323,7 @@ static void fake_mp_table(void)
 	uintptr_t lapic_addr = rdmsr(0x1b) & 0x000ffffffffff000ULL;
 	volatile uint32_t *lapic = (volatile uint32_t *)lapic_addr;
 	/* Get the pointer to the I/O APIC. */
-	volatile uint32_t *ioapic = (volatile uint32_t *)IOAPIC_ADDR;
+	ioapic_t *ioapic = (ioapic_t *)IOAPIC_ADDR;
 	/*
 	 * Allocate base memory for the MP tables, which will go into a
 	 * temporary Extended BIOS Data Area (EBDA).  The MP tables are
@@ -388,10 +373,10 @@ static void fake_mp_table(void)
 	u->s.cpu.cpu_features = cpu_features;
 	/* Fill up the entry for the (first) I/O APIC. */
 	u->s.ioapic.type = MP_IOAPIC;
-	ioapic[0] = 0x00;
-	u->s.ioapic.ic_id = (uint8_t)(ioapic[0x10 / 4] >> 24);
-	ioapic[0] = 0x01;
-	u->s.ioapic.ic_ver = (uint8_t)ioapic[0x10 / 4];
+	ioapic->IOREGSEL = IOAPICID;
+	u->s.ioapic.ic_id = (uint8_t)(ioapic->IOREGWIN >> 24);
+	ioapic->IOREGSEL = IOAPICVER;
+	u->s.ioapic.ic_ver = (uint8_t)ioapic->IOREGWIN;
 	u->s.ioapic.ic_flags = MP_IOAPIC_EN;
 	u->s.ioapic.ic_addr = (uint32_t)IOAPIC_ADDR;
 	/* Compute the checksum for the MP configuration table. */

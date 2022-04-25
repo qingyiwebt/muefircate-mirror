@@ -75,6 +75,23 @@ static inline void hlt(void)
 	__asm volatile("hlt" : : : "memory");
 }
 
+/* Obtain processor information. */
+static inline void cpuid(uint32_t leaf, uint32_t *pa, uint32_t *pb,
+					uint32_t *pc, uint32_t *pd)
+{
+	uint32_t a, b, c, d;
+	__asm volatile("cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d)
+			       : "0" (leaf));
+	if (pa)
+		*pa = a;
+	if (pb)
+		*pb = b;
+	if (pc)
+		*pc = c;
+	if (pd)
+		*pd = d;
+}
+
 /* Type of a 64-bit pointer. */
 #ifndef __x86_64__
 typedef uint64_t ptr64_t;
