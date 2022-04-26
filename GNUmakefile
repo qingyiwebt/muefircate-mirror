@@ -1,4 +1,4 @@
-# Copyright (c) 2020--2021 TK Chia
+# Copyright (c) 2020--2022 TK Chia
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -107,8 +107,8 @@ romdumper.efi: romdumper.o
 romdumper.o: romdumper.c $(LIBEFI)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-stage1/main.o romdumper.o : CPPFLAGS += -DVERSION='"$(conf_Pkg_ver)"'
-stage2/main.o : CPPFLAGS2 += -DVERSION='"$(conf_Pkg_ver)"'
+stage1/main.o romdumper.o : CPPFLAGS += -DPACKAGE_VERSION='"$(conf_Pkg_ver)"'
+stage2/main.o : CPPFLAGS2 += -DPACKAGE_VERSION='"$(conf_Pkg_ver)"'
 
 stage2/data16.bin: stage2/16.elf
 	objcopy -I elf32-i386 --dump-section .data=$@ $< /dev/null

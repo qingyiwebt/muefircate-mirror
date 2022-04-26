@@ -67,7 +67,8 @@ static void hello(void)
 {
 	extern void setvideomode16(/* ... */);
 	rm16_cs_call(3, 0, 0, 0, setvideomode16);
-	cputs(".:. biefircate " VERSION " .:. hello world from int 0x10\n");
+	cputs(".:. biefircate " PACKAGE_VERSION " .:. "
+	      "hello world from int 0x10\n");
 }
 
 void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)

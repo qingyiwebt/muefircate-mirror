@@ -34,6 +34,59 @@
 
 #define ALIGN_APIC	__attribute__((aligned(0x10)))
 
+typedef volatile struct __attribute__((packed)) {
+	uint32_t value ALIGN_APIC;
+	uint32_t : 0 ALIGN_APIC;
+} wrapped_apic_reg32_t;
+
+/*
+ * Local APIC memory-mapped registers.  I capitalize the field names to
+ * highlight that these do not refer to ordinary memory.
+ */
+typedef volatile struct __attribute__((packed)) {
+	uint32_t : 32 ALIGN_APIC;	/* 0x0000 */
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t ID ALIGN_APIC;
+	uint32_t VERSION ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;	/* 0x0040 */
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t TPR ALIGN_APIC;	/* 0x0080 */
+	uint32_t APR ALIGN_APIC;
+	uint32_t PPR ALIGN_APIC;
+	uint32_t EOI ALIGN_APIC;
+	uint32_t RRD ALIGN_APIC;	/* 0x00c0 */
+	uint32_t LDR ALIGN_APIC;
+	uint32_t DFR ALIGN_APIC;
+	uint32_t SVR ALIGN_APIC;
+	wrapped_apic_reg32_t ISR[8];	/* 0x0100 */
+	wrapped_apic_reg32_t TMR[8];	/* 0x0180 */
+	wrapped_apic_reg32_t IRR[8];	/* 0x0200 */
+	uint32_t ESR ALIGN_APIC;	/* 0x0280 */
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;	/* 0x02c0 */
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t LVT_CMCI ALIGN_APIC;
+	wrapped_apic_reg32_t ICR[2];	/* 0x0300 */
+	uint32_t LVT_TMR ALIGN_APIC;
+	uint32_t LVT_THRM ALIGN_APIC;
+	uint32_t LVT_PMC ALIGN_APIC;	/* 0x0340 */
+	wrapped_apic_reg32_t LVT_LINT[2];
+	uint32_t LVT_ERR ALIGN_APIC;
+	uint32_t TMR_IC ALIGN_APIC;	/* 0x0380 */
+	uint32_t TMR_CC ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;	/* 0x03c0 */
+	uint32_t : 32 ALIGN_APIC;
+	uint32_t TMR_DC ALIGN_APIC;
+	uint32_t : 32 ALIGN_APIC;
+} lapic_t;
+
 /* I/O APIC memory-mapped registers. */
 typedef volatile struct __attribute__((packed)) {
 	uint32_t IOREGSEL ALIGN_APIC;	/* 0x0000 --- I/O register select */

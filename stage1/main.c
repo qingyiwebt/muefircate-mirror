@@ -321,7 +321,7 @@ static void fake_mp_table(void)
 	uint32_t cpu_sig, cpu_features;
 	/* Get the local APIC address & APIC version. */
 	uintptr_t lapic_addr = rdmsr(0x1b) & 0x000ffffffffff000ULL;
-	volatile uint32_t *lapic = (volatile uint32_t *)lapic_addr;
+	lapic_t *lapic = (lapic_t *)lapic_addr;
 	/* Get the pointer to the I/O APIC. */
 	ioapic_t *ioapic = (ioapic_t *)IOAPIC_ADDR;
 	/*
@@ -365,8 +365,8 @@ static void fake_mp_table(void)
 	infof(u"LAPIC: @0x%lx\r\n", lapic_addr);
 	/* Fill up the entry for this processor. */
 	u->s.cpu.type = MP_CPU;
-	u->s.cpu.lapic_id = (uint8_t)lapic[0x20 / 4];
-	u->s.cpu.lapic_ver = (uint8_t)lapic[0x30 / 4];
+	u->s.cpu.lapic_id = (uint8_t)lapic->ID;
+	u->s.cpu.lapic_ver = (uint8_t)lapic->VERSION;
 	u->s.cpu.cpu_flags = MP_CPU_EN | MP_CPU_BP;
 	cpuid(1, &cpu_sig, NULL, NULL, &cpu_features);
 	u->s.cpu.cpu_sig = cpu_sig;
@@ -462,7 +462,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 	Elf32_Addr trampoline, entry;
 	unsigned base_kib;
 	InitializeLib(image_handle, system_table);
-	info(u".:. biefircate " VERSION " .:.\r\n");
+	info(u".:. biefircate " PACKAGE_VERSION " .:.\r\n");
 	init();
 	process_efi_conf_tables();
 	find_boot_media();

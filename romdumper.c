@@ -202,7 +202,7 @@ static void dump_fv_area(void)
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 {
 	InitializeLib(image_handle, system_table);
-	Output(u".:. ROM dumper " VERSION " .:.\r\n");
+	Output(u".:. ROM dumper " PACKAGE_VERSION " .:.\r\n");
 	find_boot_media();
 	dump_pci_roms();
 	dump_opt_rom_area();
