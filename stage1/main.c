@@ -283,14 +283,6 @@ bad_elf:
 }
 
 #ifdef XV6_COMPAT
-static uint64_t rdmsr(uint32_t idx)
-{
-	uint32_t hi, lo;
-	__asm volatile("rdmsr" : "=d" (hi), "=a" (lo)
-			       : "c" (idx));
-	return (uint64_t)hi << 32 | lo;
-}
-
 static void fake_mp_table(void)
 {
 	/*
@@ -320,7 +312,7 @@ static void fake_mp_table(void)
 	} mp_bundle_union_t;
 	uint32_t cpu_sig, cpu_features;
 	/* Get the local APIC address & APIC version. */
-	uintptr_t lapic_addr = rdmsr(0x1b) & 0x000ffffffffff000ULL;
+	uintptr_t lapic_addr = rdmsr(MSR_APIC_BASE) & 0x000ffffffffff000ULL;
 	lapic_t *lapic = (lapic_t *)lapic_addr;
 	/* Get the pointer to the I/O APIC. */
 	ioapic_t *ioapic = (ioapic_t *)IOAPIC_ADDR;

@@ -75,6 +75,20 @@ static inline void hlt(void)
 	__asm volatile("hlt" : : : "memory");
 }
 
+/* Read an x86 model-specific register. */
+static inline uint64_t rdmsr(uint32_t idx)
+{
+	uint32_t hi, lo;
+	__asm volatile("rdmsr" : "=d" (hi), "=a" (lo)
+			       : "c" (idx));
+	return (uint64_t)hi << 32 | lo;
+}
+
+/* Model-specific register numbers. */
+#define MSR_APIC_BASE	0x0000001bU
+#define MSR_MISC_ENABLE	0x000001a0U
+#define     MCEN_LCMV	0x00400000U
+
 /* Obtain processor information. */
 static inline void cpuid(uint32_t leaf, uint32_t *pa, uint32_t *pb,
 					uint32_t *pc, uint32_t *pd)
@@ -91,6 +105,12 @@ static inline void cpuid(uint32_t leaf, uint32_t *pa, uint32_t *pb,
 	if (pd)
 		*pd = d;
 }
+
+/* Bit fields in various CPUID leaves. */
+#define ID1C_MON	0x00000008U	/* monitor, MISC_ENABLE.LCMV, etc.
+					   (leaf 1, ecx) */
+#define ID6A_ARAT	0x00000004U	/* always-on APIC timer
+					   (leaf 6, eax) */
 
 /* Type of a 64-bit pointer. */
 #ifndef __x86_64__

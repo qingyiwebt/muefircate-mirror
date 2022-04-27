@@ -61,10 +61,10 @@
 #define OCW2_EOI	0x20		/* non-specific EOI */
 
 /* 8253/8254 programmable interval timer (PIT) I/O port numbers. */
-#define PIT_DATA0	0x40
-#define PIT_DATA1	0x41
-#define PIT_DATA2	0x42
-#define PIT_CMD		0x43
+#define PIT_DATA0	0x0040
+#define PIT_DATA1	0x0041
+#define PIT_DATA2	0x0042
+#define PIT_CMD		0x0043
 
 /* PIT command bit fields. */
 #define PITC_SEL0	0x00		/* select channel 0 */
@@ -76,8 +76,6 @@
 #define PITC_LOHI	0x30		/* low byte then high byte */
 #define PITC_MODE3	0x06		/* mode 3 (square wave) */
 #define PITC_BCD	0x01		/* BCD (vs. binary) mode */
-
-#define ALIGN_APIC	__attribute__((aligned(0x10)))
 
 /*
  * Map an entire ACPI system description table from physical memory into
