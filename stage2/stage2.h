@@ -74,6 +74,10 @@ extern void rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
 		      farptr16_t callee);
 extern void copy_to_tb(const void *, size_t);
 
+/* time.c functions. */
+
+extern void time_init(bparm_t *);
+
 /* usb.c functions. */
 
 extern void usb_init(bparm_t *);
@@ -112,8 +116,50 @@ extern DATA16 char tb16[TB_SZ];
 #define PIC2_CMD	0x00a0
 #define PIC2_DATA	0x00a1
 
+/* Default base vector addresses. */
+#define IRQ0		0x08
+#define IRQ8		0x70
+
 /* OCW2 bit fields for the PICs. */
 #define OCW2_EOI	0x20		/* non-specific EOI */
+
+/* CMOS port numbers. */
+#define PORT_CMOS_IDX	0x0070
+#define PORT_CMOS_DATA	0x0071
+
+/* CMOS register indices & flags. */
+#define CMOS_RTC_SEC	0x00		/* real-time clock (RTC) seconds */
+#define CMOS_RTC_SEC_ALRM 0x01		/* RTC second alarm */
+#define CMOS_RTC_MIN	0x02		/* RTC minutes */
+#define CMOS_RTC_MIN_ALRM 0x03		/* RTC minute alarm */
+#define CMOS_RTC_HR	0x04		/* RTC hours */
+#define CMOS_RTC_HR_ALRM 0x05		/* RTC hour alarm */
+#define CMOS_RTC_STA_A	0x0a		/* status register A */
+#define CMOS_RTC_STA_B	0x0b		/* status register B */
+#define CMOS_RTC_STA_C	0x0c		/* status register C */
+#define CMOS_RTC_STA_D	0x0d		/* status register D */
+#define CMOS_DIAG	0x0e		/* diagnostic status */
+#define CMOS_NMI_DIS	0x80		/* flag to disable NMIs */
+
+/* Bit fields in RTC status register A. */
+#define RTC_A_UIP	0x80		/* update in progress */
+#define RTC_A_RATE_MASK	0x7f		/* rate selection */
+#define RTC_A_RATE_1024HZ 0x26		/* - 1024 Hz (w/ 32768 Hz time base) */
+
+/* Bit fields in RTC status register B. */
+#define RTC_B_DST	0x01		/* daylight saving time */
+#define RTC_B_UPDE_ENA	0x10		/* enable update-ended interrupt */
+#define RTC_B_ALRM_ENA	0x20		/* enable alarm interrupt */
+#define RTC_B_TICK_ENA	0x40		/* enable periodic interrupt */
+#define RTC_B_FREEZE	0x80		/* freeze updates */
+
+/* Bit fields in RTC status register C. */
+#define RTC_C_UPDE	RTC_B_UPDE_ENA	/* update-ended interrupt occurred */
+#define RTC_C_ALRM	RTC_B_ALRM_ENA	/* alarm interrupt occurred */
+#define RTC_C_TICK	RTC_B_TICK_ENA	/* periodic interrupt occurred */
+
+/* Other ports. */
+#define PORT_DUMMY	0x0080
 
 /*
  * Data structure describing a single memory address range.  The front part
@@ -262,7 +308,7 @@ static inline void wr_cr4(uint32_t v)
 }
 
 #define IO_WAIT \
-	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)0x80))
+	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)PORT_DUMMY))
 
 /* Read a byte from an I/O port. */
 static inline uint8_t inp(uint16_t p)
@@ -271,9 +317,6 @@ static inline uint8_t inp(uint16_t p)
 	__asm volatile("inb %1, %0" : "=a" (v) : "Nd" (p));
 	return v;
 }
-
-#define IO_WAIT \
-	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)0x80))
 
 /* Read a byte from an I/O port, with a small wait. */
 static inline uint8_t inp_w(uint16_t p)

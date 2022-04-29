@@ -29,6 +29,13 @@
 
 	bits	16
 
+; Start a series of interrupt vector entries.
+%macro	ISR_BEGIN 1
+	section .rodata
+	global	vecs16_part%1
+vecs16_part%1:
+%endmacro
+
 ; Add an interrupt vector entry for an unimplemented interrupt.
 %macro	ISR_UNIMPL 1
 	section	.text
@@ -36,10 +43,6 @@ isr16_%{1}_unimpl:
 	call	isr16_unimpl
 	db	%1
 	section	.rodata
-    %if (%1) == 0x00
-	global	vecs16
-vecs16:
-    %endif
 	dw	isr16_%{1}_unimpl
 %endmacro
 
@@ -98,14 +101,15 @@ irq%2:
 %endmacro
 
 ; Wrap up our table of interrupt vectors.
-%macro	ISR_END 0
+%macro	ISR_END 1
 	section	.rodata
-	global	NUM_VECS16
-NUM_VECS16 equ	($-vecs16)/2
+	global	NUM_VECS16_PART%1
+NUM_VECS16_PART%1 equ ($-vecs16_part%1)/2
 %endmacro
 
-	extern	irq0, isr16_0x1a
+	extern	irq0, irq8, isr16_0x1a
 
+	ISR_BEGIN 1
 	ISR_UNIMPL 0x00
 	ISR_IRET 0x01
 	ISR_UNIMPL 0x02
@@ -135,7 +139,11 @@ NUM_VECS16 equ	($-vecs16)/2
 	ISR_IMPL 0x1a
 	ISR_IRET 0x1b
 	ISR_IRET 0x1c
-	ISR_END
+	ISR_END 1
+
+	ISR_BEGIN 2
+	ISR_IRQ 0x70, 8
+	ISR_END 2
 
 	section	.text
 

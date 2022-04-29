@@ -35,7 +35,9 @@
 
 	extern	mem_alloc, _stext16, _etext16, _sdata16, _end16
 	extern	gdt_desc_cs16, gdt_desc_ds16
-	extern	rm16_call.cont1, rm16_call.rm_cs16, vecs16, NUM_VECS16
+	extern	rm16_call.cont1, rm16_call.rm_cs16
+	extern	vecs16_part1, NUM_VECS16_PART1
+	extern	vecs16_part2, NUM_VECS16_PART2
 	extern	tb16
 
 	global	rm16_init
@@ -68,19 +70,26 @@ rm16_init:
 	lea	edi, [eax+_sdata16]
 	mov	ecx, (data16_load.end-data16_load)/4
 	rep movsd
-	lea	esi, [eax+vecs16]	; (2) --- see below
+	lea	esi, [eax+vecs16_part1]	; (2) --- see below
 	lea	ecx, [eax+_end16+3]	; blank out the uninitialized data
 	sub	ecx, edi
 	shr	ecx, 2
 	xor	eax, eax
 	rep stosd
 	xchg	edi, eax		; initialize real-mode intr. vectors
-	mov	cl, NUM_VECS16		; before calling option ROMs
+	mov	cl, NUM_VECS16_PART1	; before calling option ROMs
 	pop	eax			; (1) --- see above
 	shl	eax, 16
-.vecs:	lodsw				; (2) --- see above
+.vecs_1:
+	lodsw				; (2) --- see above
 	stosd
-	loop	.vecs
+	loop	.vecs_1
+	mov	di, 0x70*4
+	mov	cl, NUM_VECS16_PART2
+.vecs_2:
+	lodsw
+	stosd
+	loop	.vecs_2
 	mov	ax, bda.def_kb_buf-bda	; initialize IRQ 1 keyboard buffer
 	mov	[bda.kb_buf_start], ax
 	mov	[bda.kb_buf_head], ax

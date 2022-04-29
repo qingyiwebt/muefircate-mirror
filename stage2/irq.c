@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 TK Chia
+ * Copyright (c) 2021--2022 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -36,12 +36,6 @@
 #include "common.h"
 #include "stage2/stage2.h"
 
-/* Legacy 8259 programmable interrupt controller (PIC) I/O port numbers. */
-#define PIC1_CMD	0x0020
-#define PIC1_DATA	0x0021
-#define PIC2_CMD	0x00a0
-#define PIC2_DATA	0x00a1
-
 /* ICW1 bit fields for the PICs. */
 #define ICW1_IC4	0x01		/* ICW4 needed */
 #define ICW1_SNGL	0x02		/* single (vs. cascade) mode */
@@ -49,33 +43,9 @@
 #define ICW1_LTIM	0x08		/* level (vs. edge) triggered */
 #define ICW1_INIT	0x10		/* ICW1 is being issued */
 
-/* ICW2: our default base vector addresses. */
-#define IRQ0		0x08
-#define IRQ8		0x70
-
 /* ICW4 bit fields for the PICs. */
 #define ICW4_X86	0x01		/* 8086 (vs. 8080/8085) mode */
 #define ICW4_EOI	0x02		/* auto EOI */
-
-/* OCW2 bit fields for the PICs. */
-#define OCW2_EOI	0x20		/* non-specific EOI */
-
-/* 8253/8254 programmable interval timer (PIT) I/O port numbers. */
-#define PIT_DATA0	0x0040
-#define PIT_DATA1	0x0041
-#define PIT_DATA2	0x0042
-#define PIT_CMD		0x0043
-
-/* PIT command bit fields. */
-#define PITC_SEL0	0x00		/* select channel 0 */
-#define PITC_SEL1	0x40		/* select channel 1 */
-#define PITC_SEL2	0x80		/* select channel 2 */
-#define PITC_LATCH	0x00		/* counter latch (?) */
-#define PITC_LO		0x10		/* low byte only */
-#define PITC_HI		0x20		/* high byte only */
-#define PITC_LOHI	0x30		/* low byte then high byte */
-#define PITC_MODE3	0x06		/* mode 3 (square wave) */
-#define PITC_BCD	0x01		/* BCD (vs. binary) mode */
 
 /*
  * Map an entire ACPI system description table from physical memory into
@@ -199,13 +169,9 @@ void irq_init(bparm_t *bparms)
 	outp_w(PIC1_DATA, ICW4_X86);		/* ICW4 */
 	outp_w(PIC2_DATA, ICW4_X86);
 	/* Set the IRQ masks. */
-	outp_w(PIC1_DATA, ~(1 << 0 | 1 << 1));	/* OCW1 */
-	outp_w(PIC2_DATA, ~0);
+	outp_w(PIC1_DATA, ~(1 << 0 | 1 << 1 | 1 << 2)); /* OCW1 */
+	outp_w(PIC2_DATA, ~(1 << 0));
 	/* Send EOIs for good measure. */
 	outp_w(PIC1_CMD, OCW2_EOI);		/* OCW2 */
 	outp_w(PIC2_CMD, OCW2_EOI);
-	/* Program the 8253/8254 PIT for 18.2 Hz operation on IRQ 0. */
-	outp_w(PIT_CMD, PITC_SEL0 | PITC_LOHI | PITC_MODE3);
-	outp_w(PIT_DATA0, 0x00);
-	outp_w(PIT_DATA0, 0x00);
 }

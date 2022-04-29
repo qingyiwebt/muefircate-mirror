@@ -62,6 +62,14 @@ RTC_A_UIP equ	0x80			; update in progress
 
 ; Bit fields in RTC status register B.
 RTC_B_DST equ	0x01			; daylight saving time
+RTC_B_UPDE_ENA equ 0x10			; enable update-ended interrupt
+RTC_B_ALRM_ENA equ 0x20			; enable alarm interrupt
+RTC_B_TICK_ENA equ 0x40			; enable periodic interrupt
+
+; Bit fields in RTC status register C.
+RTC_C_UPDE equ	RTC_B_UPDE_ENA		; update-ended interrupt occurred
+RTC_C_ALRM equ	RTC_B_ALRM_ENA		; alarm interrupt occurred
+RTC_C_TICK equ	RTC_B_TICK_ENA		; periodic interrupt occurred
 
 ; Bit fields in CMOS diagnostic status byte.
 DIAG_BAD_BAT equ 0x80			; clock lost power
@@ -70,6 +78,11 @@ DIAG_BAD_CLK equ 0x04			; RTC time is invalid
 
 ; Other ports.
 PORT_DUMMY equ	0x0080
+
+; Values for [0x40:0xa0].
+BDA_WAIT_NONE equ 0x00			; no active wait
+BDA_WAIT_ACTIVE equ 0x01		; active wait
+BDA_WAIT_FIN equ 0x80			; wait (just) completed
 
 ; Segment selector values for our GDT.
 SEL_CS32 equ	0x0008
@@ -90,11 +103,13 @@ bda:
 .lpt3:	resw	1			; 0x40:0x0c: 3rd parallel port base
 .ebda:	resw	1			; 0x40:0x0e: ext. BIOS data area seg.
 .eqpt:	resw	1			; 0x40:0x10: installed hardware
-	resb	1
+.wait_cntdn_low: resb 1			; 0x40:0x11: (reserved, now using for
+					;	     fractional part of wait
+					;	     countdown (0x40:0x9c))
 .base_kib: resw	1			; 0x40:0x13: base memory size in KiB
 	resb	2
-.kb_stat1: resb	1			; 0x40:0x17: status flag 1
-.kb_stat2: resb 1			; 0x40:0x18: status flag 2
+.kb_stat0: resb	1			; 0x40:0x17: kbd. shift & status
+.kb_stat1: resb 1			; 0x40:0x18: kbd. stat. flags, 2nd byte
 .kb_keypad: resb 1			; 0x40:0x19: Alt-nnn keypad workspace
 .kb_buf_head: resw 1			; 0x40:0x1a: head in kbd. buf. queue
 .kb_buf_tail: resw 1			; 0x40:0x1c: tail in kbd. buf. queue
@@ -105,7 +120,7 @@ bda:
 .fd_cntdn: resb 1			; 0x40:0x40: floppy motor turn-off
 					;	     timeout count
 .fd_error: resb	1			; 0x40:0x41: floppy last op. status
-.dsk_status: resb 7			; 0x40:0x42: floppy/hard drive status/
+.dsk_status: resb 7			; 0x40:0x42: floppy/fixed disk status/
 					;	     command bytes
 .vid_mode: resb	1			; 0x40:0x49: video mode
 .vid_cols: resw	1			; 0x40:0x4a: columns on screen
@@ -122,7 +137,7 @@ bda:
 					;	     port 0x03b8 or 0x03d8
 .vid_pal: resb	1			; 0x40:0x66: last value written to
 					;	     port 0x03d9
-.restart: resd	1			; 0x40:0x67: reset restart addr.
+.p_restart: resd 1			; 0x40:0x67: reset restart addr.
 .stray_irq: resb 1			; 0x40:0x6b: IRQ in-service reg.
 					;	     value from time of last
 					;	     stray IRQ
@@ -144,5 +159,28 @@ bda:
 .com4_cntdn: resb 1			; 0x40:0x7f: ser. dev. 4 timeout cnt.
 .kb_buf_start: resw 1			; 0x40:0x80: kbd. buf. start offset
 .kb_buf_end: resw 1			; 0x40:0x82: kbd. buf. end offset
+.vid_rows_m1: resb 1			; 0x40:0x84: rows on screen - 1
+.vid_chr_ht: resw 1			; 0x40:0x85: char. height in scan lines
+.vid_ctl: resb	1			; 0x40:0x87: EGA/VGA control
+.vid_sw: resb	1			; 0x40:0x88: EGA/VGA switches
+	resb	2			; 0x40:0x89: rsvd. for display adapters
+.fd_ctl: resb	1			; 0x40:0x8b: floppy media control
+.hd_ctlr_sta: resb 1			; 0x40:0x8c: fixed disk ctrlr. status
+.hd_ctlr_err: resb 1			; 0x40:0x8d: fixed disk ctrlr. error
+.hd_intr: resb	1			; 0x40:0x8e: fixed disk intr. ctrl.
+.fd_ctl_info: resb 1			; 0x40:0x8f: floppy ctrlr. info.
+.fd0_media: resb 1			; 0x40:0x90: floppy A: media state
+.fd1_media: resb 1			; 0x40:0x91: floppy B: media state
+.fd0_media_op: resb 1			; 0x40:0x92: floppy A: op. start state
+.fd1_media_op: resb 1			; 0x40:0x93: floppy B: op. start state
+.fd0_cyl: resb	1			; 0x40:0x94: floppy A: curr. cyl. no.
+.fd1_cyl: resb	1			; 0x40:0x95: floppy B: curr. cyl. no.
+.kb_stat3: resb	1			; 0x40:0x96: kbd. mode state & type
+.kb_stat2: resb	1			; 0x40:0x97: kbd. LED flags
+.p_wait_flag: resd 1 			; 0x40:0x98: wait-complete flag addr.
+.wait_cntdn: resd 1			; 0x40:0x9c: wait countdown (microsec.)
+.wait_active: resb 1			; 0x40:0xa0: wait active flag
+	resb	7			; 0x40:0xa1: rsvd. for network adapters
+.p_vid_save: resd 1			; 0x40:0xa8: addr. of video save ptrs.
 
 %endif

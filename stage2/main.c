@@ -76,6 +76,7 @@ void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
 	mem_init(bparms);
 	rm16_init();
 	irq_init(bparms);
+	time_init(bparms);
 	rimg_init(bparms, true);
 	hello();
 	usb_init(bparms);

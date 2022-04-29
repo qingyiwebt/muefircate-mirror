@@ -86,12 +86,14 @@ rm16_call.cont3:
 
 	global	setvideomode16
 setvideomode16:
+	sti
 	mov	ah, 0x00
 	int	0x10
 	retf
 
 	global	outmem16
 outmem16:
+	sti
 	push	bp
 	push	ax
 	push	dx
