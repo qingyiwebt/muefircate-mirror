@@ -40,14 +40,58 @@ vecs16_part%1:
 %macro	ISR_UNIMPL 1
 	section	.text
 isr16_%{1}_unimpl:
+	mov	cl, %1
 	call	isr16_unimpl
-	db	%1
 	section	.rodata
 	dw	isr16_%{1}_unimpl
 %endmacro
 
 ; Add an interrupt vector entry for an interrupt implemented in assembly.
 %macro	ISR_IMPL 1
+	section	.rodata
+	dw	isr16_%1
+%endmacro
+
+; Add an interrupt vector entry for an interrupt implemented in C.
+%macro	ISR_IMPL_C 1
+	section .text
+	extern	isr16_%1_impl
+isr16_%1:
+	push	gs			; push segment registers
+	push	fs
+	push	es
+	push	ds
+	push	edi			; push registers
+	push	esi
+	push	ebp
+	push	ebx
+	push	edx
+	push	ecx
+	push	eax
+	mov	eax, esp		; preserve esp's top 16 bits, &
+	and	esp, byte -4		; round esp down to 4-byte boundary
+	push	eax			; also point eax to the saved regs.
+	xor	dx, dx			; set up segment registers: point gs
+	mov	gs, dx			; to linear address 0, fs to our
+	mov	fs, [gs:bda.ebda]	; 16-bit data segment (via the
+	mov	dx, ss			; EBDA), & ds & es to the user stack
+	mov	ds, dx
+	mov	es, dx
+	push	byte 0			; call out to C routine; stuff a 0 on
+	call	isr16_%1_impl		; stack to make ret. addr. 32-bit
+	pop	esp			; restore esp
+	pop	eax			; restore the other registers
+	pop	ecx
+	pop	edx
+	pop	ebx
+	pop	ebp
+	pop	esi
+	pop	edi
+	pop	ds
+	pop	es
+	pop	fs
+	pop	gs
+	iret				; return
 	section	.rodata
 	dw	isr16_%1
 %endmacro
@@ -63,13 +107,13 @@ isr16_%{1}_unimpl:
 	section	.text
 	extern	irq%2_impl
 irq%2:
-	push	ds			; push segment registers
-	push	es
+	push	gs			; push segment registers
 	push	fs
-	push	gs
-	push	eax			; push call-used registers
+	push	es
+	push	ds
+	push	edx			; push call-used registers
 	push	ecx
-	push	edx
+	push	eax
 	mov	eax, esp		; preserve esp's top 16 bits, &
 	and	esp, byte -4		; round esp down to 4-byte boundary
 	push	eax
@@ -82,13 +126,13 @@ irq%2:
 	push	byte 0			; call out to C routine; stuff a 0 on
 	call	irq%2_impl		; stack to make ret. addr. 32-bit
 	pop	esp			; restore esp
-	pop	edx			; restore the other registers
+	pop	eax			; restore the other registers
 	pop	ecx
-	pop	eax
-	pop	gs
-	pop	fs
-	pop	es
+	pop	edx
 	pop	ds
+	pop	es
+	pop	fs
+	pop	gs
 	iret				; return
 	section	.rodata
 	dw	irq%2
@@ -131,7 +175,7 @@ NUM_VECS16_PART%1 equ ($-vecs16_part%1)/2
 	ISR_IMPL 0x12
 	ISR_UNIMPL 0x13
 	ISR_UNIMPL 0x14
-	ISR_UNIMPL 0x15
+	ISR_IMPL_C 0x15
 	ISR_UNIMPL 0x16
 	ISR_UNIMPL 0x17
 	ISR_UNIMPL 0x18
@@ -168,8 +212,8 @@ isr16_0x12:
 	extern	_stack16
 
 ; Catch-all for unimplemented interrupt service routines.
+	global	isr16_unimpl
 isr16_unimpl:
-	pop	bx
 	xchg	dx, ax			; save our incoming ax
 	xor	ax, ax
 	mov	ds, ax
@@ -181,7 +225,7 @@ isr16_unimpl:
 	mov	es, ax
 	mov	ss, ax
 	mov	sp, _stack16
-	mov	al, [cs:bx]		; plug in the interrupt vector no.
+	xchg	cx, ax			; plug in the intr. vector no. (cl)
 	call	u8_to_hex
 	mov	[msg_unimpl.num], ax
 	mov	al, dh			; plug in the incoming ax

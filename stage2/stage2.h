@@ -82,6 +82,11 @@ extern void time_init(bparm_t *);
 
 extern void usb_init(bparm_t *);
 
+/* 16/vecs16.asm functions. */
+
+extern void isr16_unimpl(uint32_t eax, uint32_t edx, uint8_t int_no)
+	    __attribute__((noreturn));
+
 /* 16/tb16.c data. */
 
 extern DATA16 char tb16[TB_SZ];
@@ -94,6 +99,9 @@ extern DATA16 char tb16[TB_SZ];
 #define LARGE_PAGE_SIZE	0x200000UL	/* size of a larger VM page */
 #define PDPT_ALIGN	0x20U		/* alignment of the page-dir.-ptr.
 					   table (PDPT) for PAE paging */
+
+/* Flags in the eflags register. */
+#define EFL_C		(1U << 0)	/* carry */
 
 /* Flags in PAE page directory & page table entries. */
 #define PTE_P		(1UL <<  0)	/* present */
@@ -244,6 +252,46 @@ typedef struct __attribute__((packed)) {
 } bda_t;
 
 extern __seg_gs bda_t bda;
+
+/*
+ * Structure for passing register values to & from the C implementations of
+ * interrupt service routines.
+ */
+typedef struct __attribute__((packed)) {
+	union {
+		uint32_t eax;
+		uint16_t ax;
+		struct { uint8_t al, ah; };
+	};
+	union {
+		uint32_t ecx;
+		uint16_t cx;
+		struct { uint8_t cl, ch; };
+	};
+	union {
+		uint32_t edx;
+		uint16_t dx;
+		struct { uint8_t dl, dh; };
+	};
+	union {
+		uint32_t ebx;
+		uint16_t bx;
+		struct { uint8_t bl, bh; };
+	};
+	union {
+		uint32_t ebp;
+		uint16_t bp;
+	};
+	union {
+		uint32_t esi;
+		uint16_t si;
+	};
+	union {
+		uint32_t edi;
+		uint16_t di;
+	};
+	uint16_t ds, es, fs, gs, ip, cs, flags;
+} isr16_regs_t;
 
 /* Fashion a far 16-bit pointer from a 16-bit segment & a 16-bit offset. */
 static inline farptr16_t MK_FP16(uint16_t seg, uint16_t off)
