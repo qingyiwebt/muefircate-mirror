@@ -1,4 +1,4 @@
-; Copyright (c) 2021 TK Chia
+; Copyright (c) 2021--2022 TK Chia
 ;
 ; Redistribution and use in source and binary forms, with or without
 ; modification, are permitted provided that the following conditions are
@@ -83,33 +83,6 @@ rm16_call.cont2:
 rm16_call.cont3:
 	add	esp, 8
 	jmp	far dword [esp-8]
-
-	global	setvideomode16
-setvideomode16:
-	sti
-	mov	ah, 0x00
-	int	0x10
-	retf
-
-	global	outmem16
-outmem16:
-	sti
-	push	bp
-	push	ax
-	push	dx
-	mov	ah, 0x0f
-	int	0x10
-	push	bx
-	mov	ah, 0x03
-	int	0x10
-	pop	bx
-	mov	ax, 0x1301
-	mov	bl, 0x07
-	pop	cx
-	pop	bp
-	int	0x10
-	pop	bp
-	retf
 
 	section	.bss
 

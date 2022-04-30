@@ -51,9 +51,11 @@ typedef uint32_t farptr16_t;
 /* conio.c functions. */
 
 extern int cputs(const char *);
+extern int putch(char);
 extern int vcprintf(const char *, va_list)
 	   __attribute__((format(printf, 1, 0)));
 extern int cprintf(const char *, ...) __attribute__((format(printf, 1, 2)));
+extern int wherex(void);
 
 /* irq.c functions. */
 
@@ -70,8 +72,8 @@ extern void mem_va_unmap(volatile void *, size_t);
 
 extern uint16_t rm16_cs;
 extern void rm16_init(void);
-extern void rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
-		      farptr16_t callee);
+extern int rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
+		     farptr16_t callee);
 extern void copy_to_tb(const void *, size_t);
 
 /* time.c functions. */
@@ -315,11 +317,11 @@ static inline farptr16_t MK_FP16(uint16_t seg, uint16_t off)
 }
 
 /* Call a function in our own 16-bit segment. */
-static inline void rm16_cs_call(uint32_t eax, uint32_t edx, uint32_t ecx,
-				uint32_t ebx, void (*callee)(/* ... */))
+static inline int rm16_cs_call(uint32_t eax, uint32_t edx, uint32_t ecx,
+			       uint32_t ebx, int (*callee)(/* ... */))
 {
 	farptr16_t far_callee = MK_FP16(rm16_cs, (uint16_t)(uintptr_t)callee);
-	rm16_call(eax, edx, ecx, ebx, far_callee);
+	return rm16_call(eax, edx, ecx, ebx, far_callee);
 }
 
 /* Read cr0. */

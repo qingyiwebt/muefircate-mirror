@@ -116,9 +116,9 @@ stage2/data16.bin: stage2/16.elf
 stage2/text16.bin: stage2/16.elf
 	objcopy -I elf32-i386 --dump-section .text=$@ $< /dev/null
 
-stage2/16.elf: stage2/16/head.o stage2/16/do-rm16-call.o stage2/16/isr-15.o \
-	       stage2/16/kb.o stage2/16/tb16.o stage2/16/time16.o \
-	       stage2/16/vecs16.o stage2/16/16.ld
+stage2/16.elf: stage2/16/head.o stage2/16/conio16.o stage2/16/do-rm16-call.o \
+	       stage2/16/isr-15.o stage2/16/kb.o stage2/16/tb16.o \
+	       stage2/16/time16.o stage2/16/vecs16.o stage2/16/16.ld
 	$(CC3) $(LDFLAGS3) -o $@ $(^:%.ld=-T %.ld) $(LDLIBS3)
 
 stage2/16/%.o: stage2/16/%.c

@@ -52,9 +52,9 @@ struct our_pf_ctx {
 
 static void outmem_1(const char *str, size_t n)
 {
-	extern void outmem16(/* ... */);
+	extern int outmem16f(/* ... */);
 	copy_to_tb(str, n);
-	rm16_cs_call((uint32_t)tb16, n, 0, 0, outmem16);
+	rm16_cs_call((uint32_t)tb16, n, 0, 0, outmem16f);
 }
 
 static void our_putc_1(int c, void *pv)
@@ -97,4 +97,15 @@ int cprintf(const char *fmt, ...)
 int cputs(const char *str)
 {
 	return cprintf("%s", str);
+}
+
+int putch(char ch)
+{
+	return cprintf("%c", ch);
+}
+
+int wherex(void)
+{
+	extern int wherex16f(/* ... */);
+	return rm16_cs_call(0, 0, 0, 0, wherex16f);
 }

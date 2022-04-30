@@ -39,6 +39,7 @@ static void rimg_init(bparm_t *bparms, bool init_vga)
 	bparm_t *bp;
 	for (bp = bparms; bp; bp = bp->next) {
 		uint16_t rimg_seg;
+		uint32_t pci_locn;
 		bdat_pci_dev_t *pd;
 		bool do_init;
 		if (bp->type != BP_PCID)
@@ -58,15 +59,31 @@ static void rimg_init(bparm_t *bparms, bool init_vga)
 		rimg_seg = pd->rimg_seg;
 		if (!rimg_seg)
 			continue;
-		rm16_call(pd->pci_locn, 0, 0, pd->rimg_rt_seg,
+		pci_locn = pd->pci_locn;
+		if (!init_vga) {
+			uint32_t pci_id = pd->pci_id;
+			cprintf("starting option ROM @ 0x%" PRIx16 "0 for "
+				"PCI %04x:%02x:%02x.%x "
+				"%04" PRIx16 ":%04" PRIx16 "\n",
+			    rimg_seg,
+			    (unsigned)(pci_locn >> 16),
+			    (unsigned)(pci_locn >> 8 & 0xff),
+			    (unsigned)(pci_locn >> 3 & 0x1f),
+			    (unsigned)(pci_locn & 7),
+			    pci_id_vendor(pci_id),
+			    pci_id_dev(pci_id));
+		}
+		rm16_call(pci_locn, 0, 0, pd->rimg_rt_seg,
 		    MK_FP16(rimg_seg, 0x0003));
+		if (wherex() <= 1)
+			putch('\n');
 	}
 }
 
 static void hello(void)
 {
-	extern void setvideomode16(/* ... */);
-	rm16_cs_call(3, 0, 0, 0, setvideomode16);
+	extern int setvideomode16f(/* ... */);
+	rm16_cs_call(3, 0, 0, 0, setvideomode16f);
 	cputs(".:. biefircate " PACKAGE_VERSION " .:. "
 	      "hello world from int 0x10\n");
 }
@@ -81,5 +98,6 @@ void stage2_main(bparm_t *bparms, void *rm16_load, size_t rm16_sz)
 	hello();
 	usb_init(bparms);
 	rimg_init(bparms, false);
+	cputs("system halted\n");
 	hlt();
 }
