@@ -93,13 +93,13 @@ irq8:
 .waited:				; if wait complete...
 	and	ah, ~RTC_B_TICK_ENA	; ...disable periodic interrupts
 	xchg	bx, ax
-	mov	al, CMOS_RTC_STA_B | CMOS_NMI_DIS
-	call	cmos_write
 	mov	[bda.wait_active], al	; ...say there is now no active wait
 					; (we have al == 0 == BDA_WAIT_NONE)
+	mov	al, CMOS_RTC_STA_B | CMOS_NMI_DIS
+	call	cmos_write
 	xchg	bx, ax			; ...set user's wait-complete flag
 	lds	bx, [bda.p_wait_flag]
-	mov	byte [bx], BDA_WAIT_FIN
+	or	byte [bx], BDA_WAIT_FIN
 	jmp	.tick_done		; ...continue processing
 .alarm:					; if alarm...
 	sti				; ...temporary enable interrupts

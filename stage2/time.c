@@ -46,23 +46,6 @@
 #define PITC_MODE3	0x06		/* mode 3 (square wave) */
 #define PITC_BCD	0x01		/* BCD (vs. binary) mode */
 
-static uint8_t cmos_read(uint8_t idx)
-{
-	outp_w(PORT_CMOS_IDX, idx);
-	return inp_w(PORT_CMOS_DATA);
-}
-
-static void cmos_write(uint8_t idx, uint8_t v)
-{
-	outp_w(PORT_CMOS_IDX, idx);
-	outp_w(PORT_CMOS_DATA, v);
-}
-
-static void cmos_home(void)
-{
-	outp_w(PORT_CMOS_IDX, CMOS_RTC_STA_D);
-}
-
 void time_init(bparm_t *bparms)
 {
 	uint16_t retries = 0xffff;
