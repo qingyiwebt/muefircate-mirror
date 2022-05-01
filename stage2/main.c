@@ -75,7 +75,7 @@ static void rimg_init(bparm_t *bparms, bool init_vga)
 		}
 		rm16_call(pci_locn, 0, 0, pd->rimg_rt_seg,
 		    MK_FP16(rimg_seg, 0x0003));
-		if (wherex() <= 1)
+		if (wherex() > 1)
 			putch('\n');
 	}
 }

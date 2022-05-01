@@ -57,17 +57,15 @@
   ** ☐ via framebuffer from UEFI bootloader{fn-bzt-20}
   * ☐ Keyboard input
   ** ☑ via PS/2 keyboard — partially working
-  ** ☐ via USB keyboard emulating legacy PS/2 keyboard using SMI
-  *** ☐ OHCI
-  *** ☐ UHCI
+  ** ☑ via USB keyboard emulating legacy PS/2 keyboard using SMI
   *** ☑ EHCI — partially working
-  *** ☐ XHCI
+  *** ☑ XHCI — implemented, need testing
   ** ☐ via USB keyboard directly
   * ☐ Storage drive I/O
   * ☐ Time-keeping — useful-to-have capability for interacting with other devices e.g. keyboard and storage (!)
-  ** ☐ via legacy PIT and/or CMOS RTC
-  ** ☐ via time stamp counter (rdtsc etc.)
-  ** ☐ via HPET
+  ** ☑ via legacy PIT and/or CMOS RTC
+  ** ☐ via time stamp counter (`rdtsc`) or APIC timer, on a CPU
+  ** ☐ via HPET or ACPI timer, outside CPUs
 
 ---
 
