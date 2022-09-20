@@ -54,6 +54,3 @@
   * UEFI stuff
   ** **note:** boot services will be unavailable once bootloader calls `BS->ExitBootServices(, )`
   *** _might_ be possible to implement a BIOS without exiting boot services, but this is non-trivial — UEFI expects to be in control of most system resources, incl. memory, page tables, and IRQs
-  * Xv6 will panic if it cannot find MP tables per Intel's (deprecated) MultiProcessor Specification{fn-intel-97}
-  ** `biefircate` produces dummy MP tables if `XV6_COMPAT` is defined
-  ** other OSes probably do not need MP tables to work
