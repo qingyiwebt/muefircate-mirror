@@ -34,9 +34,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "elf.h"
-#ifdef XV6_COMPAT
-#   include "mp.h"
-#endif
 
 extern EFI_HANDLE LibImageHandle;
 extern EFI_GUID gEfiLoadedImageProtocolGuid;

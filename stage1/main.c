@@ -30,10 +30,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "stage1/stage1.h"
-#ifdef XV6_COMPAT
-#   include "apic.h"
-#   include "mp.h"
-#endif
 
 extern EFI_HANDLE LibImageHandle;
 extern EFI_GUID gEfiLoadedImageProtocolGuid, gEfiGlobalVariableGuid;
@@ -282,103 +278,38 @@ bad_elf:
 	return 0;
 }
 
-#ifdef XV6_COMPAT
-static void fake_mp_table(void)
+static void get_time(EFI_TIME *when)
 {
-	/*
-	 * MIT's Xv6 teaching OS --- to be precise, the x86 version at
-	 * https://github.com/mit-pdos/xv6-public --- will panic unless the
-	 * Intel multiprocessor configuration tables are set up.
-	 *
-	 * This code just fashions a minimal set of MP tables to keep Xv6
-	 * happy.  The tables are set up in the last KiB of available base
-	 * memory.
-	 *
-	 * The intent is that a more practical ELF32 kernel or bootloader
-	 * will obtain the actual multiprocessor setup by other means, such
-	 * as ACPI tables.
-	 */
-	static const char oem_id[8] = "BOCHSCPU", prod_id[12] = "0.1         ";
-	typedef struct __attribute__((packed)) {
-		unsigned char ebda_kib, ebda_reserved[15];
-		intel_mp_flt_t flt;
-		intel_mp_conf_hdr_t conf;
-		intel_mp_cpu_t cpu;
-		intel_mp_ioapic_t ioapic;
-	} mp_bundle_t;
-	typedef union {
-		mp_bundle_t s;
-		uint8_t b[sizeof(mp_bundle_t)];
-	} mp_bundle_union_t;
-	uint32_t cpu_sig, cpu_features;
-	/* Get the local APIC address & APIC version. */
-	uintptr_t lapic_addr = rdmsr(MSR_APIC_BASE) & 0x000ffffffffff000ULL;
-	lapic_t *lapic = (lapic_t *)lapic_addr;
-	/* Get the pointer to the I/O APIC. */
-	ioapic_t *ioapic = (ioapic_t *)IOAPIC_ADDR;
-	/*
-	 * Allocate base memory for the MP tables, which will go into a
-	 * temporary Extended BIOS Data Area (EBDA).  The MP tables are
-	 * expected to be used only at boot time, not run time.
-	 */
-	mp_bundle_union_t *u = bmem_alloc_boottime(sizeof(mp_bundle_t),
-						   PARA_SIZE);
-	/* Fill in the length of the temporary EBDA. */
-	u->s.ebda_kib = 1;
-	memset(u->s.ebda_reserved, 0, 15);
-	/* Fill up the MP floating pointer structure. */
-	infof(u"placing MP tables @0x%x\r\n", (uintptr_t)u);
-	u->s.flt.sig = MAGIC32('_', 'M', 'P', '_');
-	u->s.flt.mp_conf_addr = (uint32_t)(uintptr_t)&u->s.conf;
-	u->s.flt.len = sizeof(u->s.flt);
-	u->s.flt.spec_rev = 4;
-	u->s.flt.features[0] = u->s.flt.features[2] =
-	    u->s.flt.features[3] = u->s.flt.features[4] = 0;
-	u->s.flt.features[1] = MP_FEAT1_IMCRP;
-	update_cksum(u->b + offsetof(mp_bundle_t, flt), sizeof(u->s.flt),
-	    &u->s.flt.cksum);
-	/*
-	 * Fill up the MP configuration table header (except for the
-	 * checksum).
-	 */
-	u->s.conf.sig = MAGIC32('P', 'C', 'M', 'P');
-	u->s.conf.base_tbl_len = sizeof(u->s.conf) + sizeof(u->s.cpu) +
-				 sizeof(u->s.ioapic);
-	u->s.conf.spec_rev = 4;
-	memcpy(u->s.conf.oem_id, oem_id, sizeof oem_id);
-	memcpy(u->s.conf.prod_id, prod_id, sizeof prod_id);
-	u->s.conf.oem_tbl_ptr = 0;
-	u->s.conf.oem_tbl_sz = 0;
-	u->s.conf.ent_cnt = 2;
-	u->s.conf.lapic_addr = (uint32_t)lapic_addr;
-	u->s.conf.ext_tbl_len = 0;
-	u->s.conf.ext_tbl_cksum = u->s.conf.reserved = 0;
-	/* While at it... */
-	infof(u"LAPIC: @0x%lx\r\n", lapic_addr);
-	/* Fill up the entry for this processor. */
-	u->s.cpu.type = MP_CPU;
-	u->s.cpu.lapic_id = (uint8_t)lapic->ID;
-	u->s.cpu.lapic_ver = (uint8_t)lapic->VERSION;
-	u->s.cpu.cpu_flags = MP_CPU_EN | MP_CPU_BP;
-	cpuid(1, &cpu_sig, NULL, NULL, &cpu_features);
-	u->s.cpu.cpu_sig = cpu_sig;
-	u->s.cpu.cpu_features = cpu_features;
-	/* Fill up the entry for the (first) I/O APIC. */
-	u->s.ioapic.type = MP_IOAPIC;
-	ioapic->IOREGSEL = IOAPICID;
-	u->s.ioapic.ic_id = (uint8_t)(ioapic->IOREGWIN >> 24);
-	ioapic->IOREGSEL = IOAPICVER;
-	u->s.ioapic.ic_ver = (uint8_t)ioapic->IOREGWIN;
-	u->s.ioapic.ic_flags = MP_IOAPIC_EN;
-	u->s.ioapic.ic_addr = (uint32_t)IOAPIC_ADDR;
-	/* Compute the checksum for the MP configuration table. */
-	update_cksum(u->b + offsetof(mp_bundle_t, conf),
-		     sizeof(u->s.conf) + sizeof(u->s.cpu) +
-		     sizeof(u->s.ioapic), &u->s.conf.cksum);
-	/* Set the temporary EBDA segment. */
-	temp_ebda_seg = (uint16_t)((uintptr_t)u / PARA_SIZE);
+	EFI_STATUS status = RT->GetTime(when, NULL);
+	if (EFI_ERROR(status))
+		error_with_status(u"cannot get time", status);
 }
-#endif
+
+static void wait_for_time_change(void)
+{
+	EFI_TIME then, now;
+	get_time(&then);
+	do {
+		hlt();
+		get_time(&now);
+	} while (now.Second == then.Second &&
+		 now.Nanosecond == then.Nanosecond);
+}
+
+static void wait_for_one_second(void)
+{
+	EFI_TIME then, now;
+	UINT64 then_ns, now_ns;
+	get_time(&then);
+	then_ns = 1000000000ULL * then.Second + then.Nanosecond;
+	do {
+		hlt();
+		get_time(&now);
+		now_ns = 1000000000ULL * now.Second + now.Nanosecond;
+		if (now.Minute != then.Minute)
+			now_ns += 60000000000ULL;
+	} while (now_ns < then_ns + 1000000000ULL);
+}
 
 static unsigned prepare_to_hand_over(EFI_HANDLE image_handle)
 {
@@ -462,9 +393,6 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *system_table)
 	process_pci();
 	trampoline = alloc_trampoline();
 	entry = load_stage2();
-#ifdef XV6_COMPAT
-	fake_mp_table();
-#endif
 	base_kib = prepare_to_hand_over(image_handle);
 	run_stage2(entry, trampoline, base_kib, temp_ebda_seg, bparm_get());
 	return 0;

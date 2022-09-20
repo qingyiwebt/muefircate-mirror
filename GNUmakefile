@@ -38,7 +38,7 @@ CFLAGS = -pie -fPIC -ffreestanding -O2 -Wall -mno-red-zone \
 	 -fno-stack-protector -MMD
 AS = nasm
 ASFLAGS = -f win64 -MD $(@:.o=.d)
-COMMON_CPPFLAGS = -DXV6_COMPAT
+COMMON_CPPFLAGS =
 CPPFLAGS += -I $(GNUEFISRCDIR)/inc -I $(GNUEFISRCDIR)/protocol \
 	    -I $(GNUEFISRCDIR)/inc/x86_64 \
 	    -I $(LAISRCDIR)/include \
@@ -69,7 +69,6 @@ LDLIBS3 =
 
 QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
 	    $(QEMUEXTRAFLAGS)
-QEMUFLAGSXV6 = -hdb xv6/fs.img $(QEMUFLAGS)
 
 ifneq "" "$(SBSIGN_MOK)"
 STAGE1 = stage1.signed.efi
@@ -164,14 +163,6 @@ $(LIBEFI):
 	    -f '$(abspath $(conf_Srcdir))'/gnu-efi/Makefile \
 	    lib inc
 
-xv6.stamp: $(conf_Srcdir)/xv6/Makefile
-ifeq "$(conf_Separate_build_dir)" "yes"
-	$(RM) -r xv6
-	cp -a $(<D) xv6
-endif
-	$(MAKE) -C xv6 kernel fs.img
-	>$@
-
 $(LEGACY_MBR): legacy-mbr.asm
 	$(AS2) -f bin -MD $(@:.bin=.d) -o $@ $< 
 
@@ -203,17 +194,6 @@ hd.vdi: hd.img
 	qemu-img convert $< -O vdi $@.tmp
 	mv $@.tmp $@
 
-hd-xv6.img: $(STAGE1) xv6.stamp $(LEGACY_MBR)
-	$(RM) $@.tmp
-	dd if=/dev/zero of=$@.tmp bs=1048576 count=32
-	dd if=$(LEGACY_MBR) of=$@.tmp conv=notrunc
-	echo start=32K type=0B bootable | sfdisk $@.tmp
-	mkdosfs -v -F16 --offset 64 $@.tmp
-	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT
-	mcopy -i $@.tmp@@32K $< ::/EFI/BOOT/bootx64.efi
-	mcopy -i $@.tmp@@32K xv6/kernel ::/kernel.sys
-	mv $@.tmp $@
-
 distclean: clean
 	$(RM) config.cache
 ifeq "$(conf_Separate_build_dir)" "yes"
@@ -231,20 +211,14 @@ clean:
 		fi; \
 	done
 ifeq "$(conf_Separate_build_dir)" "yes"
-	$(RM) -r stage1 stage2 gnu-efi xv6
+	$(RM) -r stage1 stage2 gnu-efi
 else
 	$(MAKE) -C gnu-efi clean
-	$(MAKE) -C xv6 clean
 endif
 .PHONY: clean
 
 run-qemu: hd.img
 	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda $< $(QEMUFLAGS)
-.PHONY: run-qemu
-
-run-qemu-xv6: hd-xv6.img xv6.stamp
-	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda $< \
-	    $(QEMUFLAGSXV6)
 .PHONY: run-qemu
 
 -include *.d stage1/*.d stage2/*.d stage2/16/*.d
