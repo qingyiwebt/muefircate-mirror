@@ -43,60 +43,60 @@
 
 /* acpi.c functions. */
 
-extern void acpi_init(acpi_xsdp_t *);
+extern void acpi_init (acpi_xsdp_t *);
 
 /* bmem.c functions. */
 
-extern void bmem_init(void);
-extern void *bmem_alloc(UINTN, UINTN);
-extern void *bmem_alloc_boottime(UINTN, UINTN);
-extern void bmem_fini(EFI_MEMORY_DESCRIPTOR *, UINTN, UINTN,
-    uint32_t *, uint32_t *);
+extern void bmem_init (void);
+extern void *bmem_alloc (UINTN, UINTN);
+extern void *bmem_alloc_boottime (UINTN, UINTN);
+extern void bmem_fini (EFI_MEMORY_DESCRIPTOR *, UINTN, UINTN,
+		       uint32_t *, uint32_t *);
 
 /* bparm.c functions. */
 
-extern void *bparm_add(uint32_t, uint32_t);
-extern bdat_mem_range_t *bparm_add_mem_range(uint64_t, uint64_t,
-    uint32_t, uint32_t, uint64_t);
-extern bparm_t *bparm_get(void);
+extern void *bparm_add (uint32_t, uint32_t);
+extern bdat_mem_range_t *bparm_add_mem_range (uint64_t, uint64_t,
+					      uint32_t, uint32_t, uint64_t);
+extern bparm_t *bparm_get (void);
 
 /* conf.c functions. */
 
-extern void conf_init(void);
-extern void conf_slow_step_pause(void);
-extern void conf_fini(void);
+extern void conf_init (void);
+extern void conf_slow_step_pause (void);
+extern void conf_fini (void);
 
 /* fv.c functions. */
 
-extern void fv_init(void);
-extern bool fv_find_rimg(uint32_t, uint32_t, void **, uint32_t *);
-extern void fv_fini(void);
+extern void fv_init (void);
+extern bool fv_find_rimg (uint32_t, uint32_t, void **, uint32_t *);
+extern void fv_fini (void);
 
 /* util.c functions. */
 
-extern __attribute__((noreturn)) void error_with_status(IN CONST CHAR16 *,
-							EFI_STATUS);
-extern __attribute__((noreturn)) void error(IN CONST CHAR16 *);
-extern void warn(IN CONST CHAR16 *);
-extern void info(IN CONST CHAR16 *);
-extern void infof(IN CONST CHAR16 *, ...);
-extern void print_guid(const EFI_GUID *);
-extern EFI_MEMORY_DESCRIPTOR *get_mem_map(UINTN *, UINTN *, UINTN *);
-extern uint8_t compute_cksum(const void *, size_t);
-extern void update_cksum(uint8_t *, size_t, uint8_t *);
-extern bool sleepx(unsigned, volatile bool *);
+extern __attribute__ ((noreturn)) void error_with_status (IN CONST CHAR16 *,
+							  EFI_STATUS);
+extern __attribute__ ((noreturn)) void error (IN CONST CHAR16 *);
+extern void warn (IN CONST CHAR16 *);
+extern void info (IN CONST CHAR16 *);
+extern void infof (IN CONST CHAR16 *, ...);
+extern void print_guid (const EFI_GUID *);
+extern EFI_MEMORY_DESCRIPTOR *get_mem_map (UINTN *, UINTN *, UINTN *);
+extern uint8_t compute_cksum (const void *, size_t);
+extern void update_cksum (uint8_t *, size_t, uint8_t *);
+extern bool sleepx (unsigned, volatile bool *);
 
-/* pci.h functions. */
+/* pci.c functions. */
 
-extern const rimg_pcir_t *rimg_find_pcir(const void *, uint64_t);
-const uint16_t *rimg_pcir_find_dev_id_list(const rimg_pcir_t *, const void *);
-extern void process_pci(void);
+extern const rimg_pcir_t *rimg_find_pcir (const void *, uint64_t);
+const uint16_t *rimg_pcir_find_dev_id_list (const rimg_pcir_t *, const void *);
+extern void process_pci (void);
 
 /* run-stage2.asm functions. */
 
-extern void run_stage2(Elf32_Addr entry, Elf32_Addr trampoline,
-		       unsigned base_kib, uint16_t temp_ebda_seg,
-		       bparm_t *bparm);
+extern void run_stage2 (Elf32_Addr entry, Elf32_Addr trampoline,
+			unsigned base_kib, uint16_t temp_ebda_seg,
+			bparm_t * bparm);
 
 /* Macros, inline functions, & other definitions. */
 
@@ -105,51 +105,54 @@ extern void run_stage2(Elf32_Addr entry, Elf32_Addr trampoline,
 	struct { UINT32 __bits[((num_ents) + 32ULL - 1) / 32]; }
 
 /* Test whether a bit in a bit vector is set. */
-static inline bool bvec_test(const void *bvec, UINT32 idx)
+static inline bool
+bvec_test (const void *bvec, UINT32 idx)
 {
-	int res;
-	__asm volatile("btl %2, %a1; sbbl %0, %0"
-	    : "=r" (res) : "p" (bvec), "r" (idx) : "cc");
-	return res;
+  int res;
+  __asm volatile ("btl %2, %a1; sbbl %0, %0":"=r" (res):"p" (bvec),
+		  "r" (idx):"cc");
+  return res;
 }
 
 /* Set a bit in a bit vector. */
-static inline void bvec_set(void *bvec, UINT32 idx)
+static inline void
+bvec_set (void *bvec, UINT32 idx)
 {
-	__asm volatile("btsl %1, %a0"
-	    : : "p" (bvec), "r" (idx) : "cc", "memory");
+  __asm volatile ("btsl %1, %a0"::"p" (bvec), "r" (idx):"cc", "memory");
 }
 
 /* Clear a bit in a bit vector. */
-static inline void bvec_clear(void *bvec, UINT32 idx)
+static inline void
+bvec_clear (void *bvec, UINT32 idx)
 {
-	__asm volatile("btrl %1, %a0"
-	    : : "p" (bvec), "r" (idx) : "cc", "memory");
+  __asm volatile ("btrl %1, %a0"::"p" (bvec), "r" (idx):"cc", "memory");
 }
 
 /*
  * Convert a paragraph-aligned real mode linear address to a real mode
  * segment value.
  */
-static inline uint16_t addr_to_rm_seg(uintptr_t p)
+static inline uint16_t
+addr_to_rm_seg (uintptr_t p)
 {
-	return (uint16_t)(p / PARA_SIZE);
+  return (uint16_t) (p / PARA_SIZE);
 }
 
 /* Ditto. */
-static inline uint16_t ptr_to_rm_seg(const void *p)
+static inline uint16_t
+ptr_to_rm_seg (const void *p)
 {
-	return addr_to_rm_seg((uintptr_t)p);
+  return addr_to_rm_seg ((uintptr_t) p);
 }
 
 /*
  * Iterate over a memory map returned by LibMemoryMap or EFI_BOOT_SERVICES
- * .GetMemoryMap(...).
+ * .GetMemoryMap (...).
  */
 #define FOR_EACH_MEM_DESC(desc, descs, desc_sz, num_ents, ent_iter) \
 	for ((ent_iter) = (num_ents), (desc) = (descs); \
 	     (ent_iter); \
 	     --(ent_iter), \
-	     (desc) = (EFI_MEMORY_DESCRIPTOR *)((char *)(desc) + (desc_sz)))
+	     (desc) = (EFI_MEMORY_DESCRIPTOR *) ((char *)(desc) + (desc_sz)))
 
 #endif

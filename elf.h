@@ -46,15 +46,15 @@ typedef uint32_t Elf32_Word, Elf32_Addr, Elf32_Off;
 #define EI_NIDENT	16
 
 /* Overall ELF header. */
-typedef struct __attribute__((packed)) {
-	uint8_t e_ident[EI_NIDENT];
-	Elf32_Half e_type, e_machine;
-	Elf32_Word e_version;
-	Elf32_Addr e_entry;
-	Elf32_Off e_phoff, e_shoff;
-	Elf32_Word e_flags;
-	Elf32_Half e_ehsize, e_phentsize, e_phnum,
-		   e_shentsize, e_shnum, e_shstrndx;
+typedef struct __attribute__ ((packed))
+{
+  uint8_t e_ident[EI_NIDENT];
+  Elf32_Half e_type, e_machine;
+  Elf32_Word e_version;
+  Elf32_Addr e_entry;
+  Elf32_Off e_phoff, e_shoff;
+  Elf32_Word e_flags;
+  Elf32_Half e_ehsize, e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx;
 } Elf32_Ehdr;
 
 /* e_ident[] field indices. */
@@ -79,11 +79,12 @@ typedef struct __attribute__((packed)) {
 #define EM_386		3
 
 /* Program header. */
-typedef struct __attribute__((packed)) {
-	Elf32_Word p_type;
-	Elf32_Off p_offset;
-	Elf32_Addr p_vaddr, p_paddr;
-	Elf32_Word p_filesz, p_memsz, p_flags, p_align;
+typedef struct __attribute__ ((packed))
+{
+  Elf32_Word p_type;
+  Elf32_Off p_offset;
+  Elf32_Addr p_vaddr, p_paddr;
+  Elf32_Word p_filesz, p_memsz, p_flags, p_align;
 } Elf32_Phdr;
 
 /* p_type field values. */

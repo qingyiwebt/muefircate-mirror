@@ -34,56 +34,60 @@
 static EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *inputx;
 static volatile bool slow_step = false;
 
-static EFI_STATUS EFIAPI key_slow_step(IN EFI_KEY_DATA *key)
+static EFI_STATUS EFIAPI
+key_slow_step (IN EFI_KEY_DATA * key)
 {
-	EFI_KEY_DATA reap_key;
-	slow_step = true;
-	inputx->ReadKeyStrokeEx(inputx, &reap_key);
-	return EFI_SUCCESS;
+  EFI_KEY_DATA reap_key;
+  slow_step = true;
+  inputx->ReadKeyStrokeEx (inputx, &reap_key);
+  return EFI_SUCCESS;
 }
 
-void conf_init(void)
+void
+conf_init (void)
 {
-	EFI_KEY_DATA key1 = { { 0, u's' }, { 0, 0 } },
-		     key2 = { { 0, u'S' }, { 0, 0 } };
-	VOID *notify1, *notify2;
-	EFI_STATUS status = LibLocateProtocol(&SimpleTextInputExProtocol,
-	    (void **)&inputx);
-	if (EFI_ERROR(status))
-		error_with_status(u"cannot get EFI_SIMPLE_TEXT_INPUT_EX_"
-				   "PROTOCOL", status);
-	status = inputx->RegisterKeyNotify(inputx, &key1, key_slow_step,
-	    &notify1);
-	if (EFI_ERROR(status))
-		error_with_status(u"lolwut?", status);
-	status = inputx->RegisterKeyNotify(inputx, &key2, key_slow_step,
-	    &notify2);
-	if (EFI_ERROR(status))
-		error_with_status(u"lolwut?", status);
-	infof(u"%Hpress `S' within 2 seconds to enable slow-stepping mode%N");
-	sleepx(2, &slow_step);
-	inputx->UnregisterKeyNotify(inputx, notify1);
-	inputx->UnregisterKeyNotify(inputx, notify2);
-	info(u"\r                                                       \r");
+  EFI_KEY_DATA key1 = { {0, u's'}, {0, 0} }, key2 = { {0, u'S'}, {0, 0} };
+  VOID *notify1, *notify2;
+  EFI_STATUS status = LibLocateProtocol (&SimpleTextInputExProtocol,
+					 (void **) &inputx);
+  if (EFI_ERROR (status))
+    error_with_status (u"cannot get EFI_SIMPLE_TEXT_INPUT_EX_"
+		       "PROTOCOL", status);
+  status = inputx->RegisterKeyNotify (inputx, &key1, key_slow_step, &notify1);
+  if (EFI_ERROR (status))
+    error_with_status (u"lolwut?", status);
+  status = inputx->RegisterKeyNotify (inputx, &key2, key_slow_step, &notify2);
+  if (EFI_ERROR (status))
+    error_with_status (u"lolwut?", status);
+  infof (u"%Hpress `S' within 2 seconds to enable slow-stepping mode%N");
+  sleepx (2, &slow_step);
+  inputx->UnregisterKeyNotify (inputx, notify1);
+  inputx->UnregisterKeyNotify (inputx, notify2);
+  info (u"\r                                                       \r");
 }
 
-void conf_slow_step_pause(void)
+void
+conf_slow_step_pause (void)
 {
-	EFI_KEY_DATA key = { { 0, 0 }, { 0, 0 } };
-	EFI_STATUS status;
-	if (slow_step) {
-		Print(u"%Hpress any key to continue%N");
-		do {
-			hlt();
-			status = inputx->ReadKeyStrokeEx(inputx, &key);
-			if (EFI_ERROR(status) && status != EFI_NOT_READY)
-				error_with_status(u"lolwut?", status);
-		} while (EFI_ERROR(status) ||
-			 (!key.Key.ScanCode && !key.Key.UnicodeChar));
-		Output(u"\r                         \r");
+  EFI_KEY_DATA key = { {0, 0}, {0, 0} };
+  EFI_STATUS status;
+  if (slow_step)
+    {
+      Print (u"%Hpress any key to continue%N");
+      do
+	{
+	  hlt ();
+	  status = inputx->ReadKeyStrokeEx (inputx, &key);
+	  if (EFI_ERROR (status) && status != EFI_NOT_READY)
+	    error_with_status (u"lolwut?", status);
 	}
+      while (EFI_ERROR (status)
+	     || (!key.Key.ScanCode && !key.Key.UnicodeChar));
+      Output (u"\r                         \r");
+    }
 }
 
-void conf_fini(void)
+void
+conf_fini (void)
 {
 }

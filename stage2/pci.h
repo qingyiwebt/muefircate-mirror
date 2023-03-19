@@ -38,40 +38,44 @@
 
 /* pci.c functions. */
 
-extern uint32_t in_pci_d_maybe_unaligned(uint32_t, uint8_t);
-extern void out_pci_d_maybe_unaligned(uint32_t, uint8_t, uint32_t);
-extern void *pci_va_map(uint32_t, uint8_t, size_t, uint64_t *);
+extern uint32_t in_pci_d_maybe_unaligned (uint32_t, uint8_t);
+extern void out_pci_d_maybe_unaligned (uint32_t, uint8_t, uint32_t);
+extern void *pci_va_map (uint32_t, uint8_t, size_t, uint64_t *);
 
 /* Read an aligned longword from a PCI device's PCI configuration space. */
-static inline uint32_t in_pci_d_aligned(uint32_t locn, uint8_t off)
+static inline uint32_t
+in_pci_d_aligned (uint32_t locn, uint8_t off)
 {
-	outpd_w(PCI_ADDR, 1 << 31 | (locn & 0xffffU) << 8 | off);
-	return inpd_w(PCI_DATA);
+  outpd_w (PCI_ADDR, 1 << 31 | (locn & 0xffffU) << 8 | off);
+  return inpd_w (PCI_DATA);
 }
 
 /* Read a longword from a PCI device's PCI configuration space. */
-static inline uint32_t in_pci_d(uint32_t locn, uint8_t off)
+static inline uint32_t
+in_pci_d (uint32_t locn, uint8_t off)
 {
-	if (__builtin_constant_p(off & 3) && (off & 3) == 0)
-		return in_pci_d_aligned(locn, off);
-	else
-		return in_pci_d_maybe_unaligned(locn, off);
+  if (__builtin_constant_p (off & 3) && (off & 3) == 0)
+    return in_pci_d_aligned (locn, off);
+  else
+    return in_pci_d_maybe_unaligned (locn, off);
 }
 
 /* Write an aligned longword to a PCI device's PCI configuration space. */
-static inline void out_pci_d_aligned(uint32_t locn, uint8_t off, uint32_t v)
+static inline void
+out_pci_d_aligned (uint32_t locn, uint8_t off, uint32_t v)
 {
-	outpd_w(PCI_ADDR, 1 << 31 | locn << 8 | off);
-	outpd_w(PCI_DATA, v);
+  outpd_w (PCI_ADDR, 1 << 31 | locn << 8 | off);
+  outpd_w (PCI_DATA, v);
 }
 
 /* Write a longword to a PCI device's PCI configuration space. */
-static inline void out_pci_d(uint32_t locn, uint8_t off, uint32_t v)
+static inline void
+out_pci_d (uint32_t locn, uint8_t off, uint32_t v)
 {
-	if (__builtin_constant_p(off & 3) && (off & 3) == 0)
-		out_pci_d_aligned(locn, off, v);
-	else
-		out_pci_d_maybe_unaligned(locn, off, v);
+  if (__builtin_constant_p (off & 3) && (off & 3) == 0)
+    out_pci_d_aligned (locn, off, v);
+  else
+    out_pci_d_maybe_unaligned (locn, off, v);
 }
 
 #endif

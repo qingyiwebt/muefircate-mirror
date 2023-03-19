@@ -50,44 +50,45 @@ typedef uint32_t farptr16_t;
 
 /* conio.c functions. */
 
-extern int cputs(const char *);
-extern int putch(char);
-extern int vcprintf(const char *, va_list)
-	   __attribute__((format(printf, 1, 0)));
-extern int cprintf(const char *, ...) __attribute__((format(printf, 1, 2)));
-extern int wherex(void);
+extern int cputs (const char *);
+extern int putch (char);
+extern int vcprintf (const char *, va_list)
+	   __attribute__ ((format (printf, 1, 0)));
+extern int cprintf (const char *, ...)
+	   __attribute__ ((format (printf, 1, 2)));
+extern int wherex (void);
 
 /* irq.c functions. */
 
-extern void irq_init(bparm_t *);
+extern void irq_init (bparm_t *);
 
 /* mem.c functions. */
 
-extern void mem_init(bparm_t *);
-extern void *mem_alloc(size_t, size_t, uintptr_t);
-extern void *mem_va_map(uint64_t, size_t, unsigned);
-extern void mem_va_unmap(volatile void *, size_t);
+extern void mem_init (bparm_t *);
+extern void *mem_alloc (size_t, size_t, uintptr_t);
+extern void *mem_va_map (uint64_t, size_t, unsigned);
+extern void mem_va_unmap (volatile void *, size_t);
 
 /* rm16.asm functions and data. */
 
 extern uint16_t rm16_cs;
-extern void rm16_init(void);
-extern int rm16_call(uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
-		     farptr16_t callee);
-extern void copy_to_tb(const void *, size_t);
+extern void rm16_init (void);
+extern int rm16_call (uint32_t eax, uint32_t edx, uint32_t ecx, uint32_t ebx,
+		      farptr16_t callee);
+extern void copy_to_tb (const void *, size_t);
 
 /* time.c functions. */
 
-extern void time_init(bparm_t *);
+extern void time_init (bparm_t *);
 
 /* usb.c functions. */
 
-extern void usb_init(bparm_t *);
+extern void usb_init (bparm_t *);
 
 /* 16/vecs16.asm functions. */
 
-extern void isr16_unimpl(uint32_t eax, uint32_t edx, uint8_t int_no)
-	    __attribute__((noreturn));
+extern void isr16_unimpl (uint32_t eax, uint32_t edx, uint8_t int_no)
+	    __attribute__ ((noreturn));
 
 /* 16/tb16.c data. */
 
@@ -172,100 +173,102 @@ extern DATA16 char tb16[TB_SZ];
 #define PORT_DUMMY	0x0080
 
 /* Values for [0x40:0xa0]. */
-#define BDA_WAIT_NONE	0x00		/* no active wait */
-#define BDA_WAIT_ACTIVE	0x01		/* active wait */
-#define BDA_WAIT_FIN	0x80		/* wait (just) completed */
+#define BDA_WAIT_NONE	0x00	/* no active wait */
+#define BDA_WAIT_ACTIVE	0x01	/* active wait */
+#define BDA_WAIT_FIN	0x80	/* wait (just) completed */
 
 /*
  * Data structure describing a single memory address range.  The front part
  * is in the same format as returned by int 0x15, ax = 0xe820.
  */
-typedef struct __attribute__((packed)) mem_range {
-	uint64_t start;
-	uint64_t len;
-	uint32_t e820_type;
-	uint32_t e820_ext_attr;
-	uint64_t uefi_attr;
+typedef struct __attribute__ ((packed)) mem_range
+{
+  uint64_t start;
+  uint64_t len;
+  uint32_t e820_type;
+  uint32_t e820_ext_attr;
+  uint64_t uefi_attr;
 } mem_range_t;
 
 /* BIOS data area variables.  See stage2/stage2.inc. */
-typedef struct __attribute__((packed)) {
-	uint16_t com1;
-	uint16_t com2;
-	uint16_t com3;
-	uint16_t com4;
-	uint16_t lpt1;
-	uint16_t lpt2;
-	uint16_t lpt3;
-	uint16_t ebda;
-	uint16_t eqpt;
-	uint8_t wait_cntdn_low;
-	uint16_t base_kib;
-	uint16_t : 16;
-	uint8_t kb_stat0;
-	uint8_t kb_stat1;
-	uint8_t kb_keypad;
-	uint16_t kb_buf_head;
-	uint16_t kb_buf_tail;
-	uint16_t kb_buf[16];
-	uint8_t fd_recalib;
-	uint8_t fd_motor;
-	uint8_t fd_cntdn;
-	uint8_t fd_error;
-	uint8_t dsk_status[7];
-	uint8_t vid_mode;
-	uint16_t vid_cols;
-	uint16_t vid_page_sz;
-	uint16_t vid_page_start;
-	uint16_t vid_xy[8];
-	uint16_t vid_curs_shape;
-	uint8_t vid_pg;
-	uint16_t crtc;
-	uint8_t vid_msr;
-	uint8_t vid_pal;
-	farptr16_t restart;
-	uint8_t stray_irq;
-	uint32_t timer;
-	uint8_t timer_ovf;
-	uint8_t ctrlc;
-	uint16_t reset_flag;
-	uint8_t hd_error;
-	uint8_t hd_cnt;
-	uint8_t hd_ctl;
-	uint8_t hd_port_off;
-	uint8_t lpt1_cntdn;
-	uint8_t lpt2_cntdn;
-	uint8_t lpt3_cntdn;
-	uint8_t flags_0x4b;
-	uint8_t com1_cntdn;
-	uint8_t com2_cntdn;
-	uint8_t com3_cntdn;
-	uint8_t com4_cntdn;
-	uint16_t kb_buf_start;
-	uint16_t kb_buf_end;
-	uint8_t vid_rows_m1;
-	uint16_t vid_chr_ht;
-	uint8_t vid_ctl;
-	uint8_t vid_sw;
-	uint8_t : 8, : 8;
-	uint8_t fd_ctl;
-	uint8_t hd_ctlr_sta;
-	uint8_t hd_ctlr_err;
-	uint8_t hd_intr;
-	uint8_t fd_ctl_info;
-	uint8_t fd0_media;
-	uint8_t fd1_media;
-	uint8_t fd0_media_op;
-	uint8_t fd1_media_op;
-	uint8_t fd0_cyl;
-	uint8_t fd1_cyl;
-	uint8_t kb_stat3;
-	uint8_t kb_stat2;
-	farptr16_t p_wait_flag;
-	uint32_t wait_cntdn;
-	uint8_t wait_active;
-	uint8_t : 8, : 8, : 8, : 8, : 8, : 8, : 8;
-	farptr16_t p_vid_save;
+typedef struct __attribute__ ((packed))
+{
+  uint16_t com1;
+  uint16_t com2;
+  uint16_t com3;
+  uint16_t com4;
+  uint16_t lpt1;
+  uint16_t lpt2;
+  uint16_t lpt3;
+  uint16_t ebda;
+  uint16_t eqpt;
+  uint8_t wait_cntdn_low;
+  uint16_t base_kib;
+  uint16_t : 16;
+  uint8_t kb_stat0;
+  uint8_t kb_stat1;
+  uint8_t kb_keypad;
+  uint16_t kb_buf_head;
+  uint16_t kb_buf_tail;
+  uint16_t kb_buf[16];
+  uint8_t fd_recalib;
+  uint8_t fd_motor;
+  uint8_t fd_cntdn;
+  uint8_t fd_error;
+  uint8_t dsk_status[7];
+  uint8_t vid_mode;
+  uint16_t vid_cols;
+  uint16_t vid_page_sz;
+  uint16_t vid_page_start;
+  uint16_t vid_xy[8];
+  uint16_t vid_curs_shape;
+  uint8_t vid_pg;
+  uint16_t crtc;
+  uint8_t vid_msr;
+  uint8_t vid_pal;
+  farptr16_t restart;
+  uint8_t stray_irq;
+  uint32_t timer;
+  uint8_t timer_ovf;
+  uint8_t ctrlc;
+  uint16_t reset_flag;
+  uint8_t hd_error;
+  uint8_t hd_cnt;
+  uint8_t hd_ctl;
+  uint8_t hd_port_off;
+  uint8_t lpt1_cntdn;
+  uint8_t lpt2_cntdn;
+  uint8_t lpt3_cntdn;
+  uint8_t flags_0x4b;
+  uint8_t com1_cntdn;
+  uint8_t com2_cntdn;
+  uint8_t com3_cntdn;
+  uint8_t com4_cntdn;
+  uint16_t kb_buf_start;
+  uint16_t kb_buf_end;
+  uint8_t vid_rows_m1;
+  uint16_t vid_chr_ht;
+  uint8_t vid_ctl;
+  uint8_t vid_sw;
+  uint8_t : 8, : 8;
+  uint8_t fd_ctl;
+  uint8_t hd_ctlr_sta;
+  uint8_t hd_ctlr_err;
+  uint8_t hd_intr;
+  uint8_t fd_ctl_info;
+  uint8_t fd0_media;
+  uint8_t fd1_media;
+  uint8_t fd0_media_op;
+  uint8_t fd1_media_op;
+  uint8_t fd0_cyl;
+  uint8_t fd1_cyl;
+  uint8_t kb_stat3;
+  uint8_t kb_stat2;
+  farptr16_t p_wait_flag;
+  uint32_t wait_cntdn;
+  uint8_t wait_active;
+  uint8_t : 8, : 8, : 8, : 8, : 8, : 8, : 8;
+  farptr16_t p_vid_save;
 } bda_t;
 
 extern __seg_gs bda_t bda;
@@ -274,163 +277,200 @@ extern __seg_gs bda_t bda;
  * Structure for passing register values to & from the C implementations of
  * interrupt service routines.
  */
-typedef struct __attribute__((packed)) {
-	union {
-		uint32_t eax;
-		uint16_t ax;
-		struct { uint8_t al, ah; };
-	};
-	union {
-		uint32_t ecx;
-		uint16_t cx;
-		struct { uint8_t cl, ch; };
-	};
-	union {
-		uint32_t edx;
-		uint16_t dx;
-		struct { uint8_t dl, dh; };
-	};
-	union {
-		uint32_t ebx;
-		uint16_t bx;
-		struct { uint8_t bl, bh; };
-	};
-	union {
-		uint32_t ebp;
-		uint16_t bp;
-	};
-	union {
-		uint32_t esi;
-		uint16_t si;
-	};
-	union {
-		uint32_t edi;
-		uint16_t di;
-	};
-	uint16_t ds, es, fs, gs, ip, cs, flags;
+typedef struct __attribute__ ((packed))
+{
+  union
+  {
+    uint32_t eax;
+    uint16_t ax;
+    struct
+    {
+      uint8_t al, ah;
+    };
+  };
+  union
+  {
+    uint32_t ecx;
+    uint16_t cx;
+    struct
+    {
+      uint8_t cl, ch;
+    };
+  };
+  union
+  {
+    uint32_t edx;
+    uint16_t dx;
+    struct
+    {
+      uint8_t dl, dh;
+    };
+  };
+  union
+  {
+    uint32_t ebx;
+    uint16_t bx;
+    struct
+    {
+      uint8_t bl, bh;
+    };
+  };
+  union
+  {
+    uint32_t ebp;
+    uint16_t bp;
+  };
+  union
+  {
+    uint32_t esi;
+    uint16_t si;
+  };
+  union
+  {
+    uint32_t edi;
+    uint16_t di;
+  };
+  uint16_t ds, es, fs, gs, ip, cs, flags;
 } isr16_regs_t;
 
 /* Fashion a far 16-bit pointer from a 16-bit segment & a 16-bit offset. */
-static inline farptr16_t MK_FP16(uint16_t seg, uint16_t off)
+static inline farptr16_t
+MK_FP16 (uint16_t seg, uint16_t off)
 {
-	return (farptr16_t)seg << 16 | off;
+  return (farptr16_t) seg << 16 | off;
 }
 
 /* Call a function in our own 16-bit segment. */
-static inline int rm16_cs_call(uint32_t eax, uint32_t edx, uint32_t ecx,
-			       uint32_t ebx, int (*callee)(/* ... */))
+static inline int
+rm16_cs_call (uint32_t eax, uint32_t edx, uint32_t ecx,
+	      uint32_t ebx, int (*callee) (/* ... */))
 {
-	farptr16_t far_callee = MK_FP16(rm16_cs, (uint16_t)(uintptr_t)callee);
-	return rm16_call(eax, edx, ecx, ebx, far_callee);
+  farptr16_t far_callee = MK_FP16 (rm16_cs, (uint16_t) (uintptr_t) callee);
+  return rm16_call (eax, edx, ecx, ebx, far_callee);
 }
 
 /* Read cr0. */
-static inline uint32_t rd_cr0(void)
+static inline uint32_t
+rd_cr0 (void)
 {
-	uint32_t v;
-	__asm volatile("movl %%cr0, %0" : "=r" (v));
-	return v;
+  uint32_t v;
+  __asm volatile ("movl %%cr0, %0" : "=r" (v));
+  return v;
 }
 
 /* Write cr0. */
-static inline void wr_cr0(uint32_t v)
+static inline void
+wr_cr0 (uint32_t v)
 {
-	__asm volatile("movl %0, %%cr0" : : "r" (v) : "memory");
+  __asm volatile ("movl %0, %%cr0" : : "r" (v) : "memory");
 }
 
 /* Read cr3. */
-static inline uint32_t rd_cr3(void)
+static inline uint32_t
+rd_cr3 (void)
 {
-	uint32_t v;
-	__asm volatile("movl %%cr3, %0" : "=r" (v));
-	return v;
+  uint32_t v;
+  __asm volatile ("movl %%cr3, %0" : "=r" (v));
+  return v;
 }
 
 /* Write cr3. */
-static inline void wr_cr3(uint32_t v)
+static inline void
+wr_cr3 (uint32_t v)
 {
-	__asm volatile("movl %0, %%cr3" : : "r" (v) : "memory");
+  __asm volatile ("movl %0, %%cr3" : : "r" (v):"memory");
 }
 
 /* Flush page table caches by reading & writing cr3. */
-static inline void flush_cr3(void)
+static inline void
+flush_cr3 (void)
 {
-	wr_cr3(rd_cr3());
+  wr_cr3 (rd_cr3 ());
 }
 
 /* Read cr4. */
-static inline uint32_t rd_cr4(void)
+static inline uint32_t
+rd_cr4 (void)
 {
-	uint32_t v;
-	__asm volatile("movl %%cr4, %0" : "=r" (v));
-	return v;
+  uint32_t v;
+  __asm volatile ("movl %%cr4, %0" : "=r" (v));
+  return v;
 }
 
 /* Write cr4. */
-static inline void wr_cr4(uint32_t v)
+static inline void
+wr_cr4 (uint32_t v)
 {
-	__asm volatile("movl %0, %%cr4" : : "r" (v) : "memory");
+  __asm volatile ("movl %0, %%cr4" : : "r" (v) : "memory");
 }
 
 #define IO_WAIT \
-	__asm volatile("outb %%al, %0" : : "Nd" ((uint16_t)PORT_DUMMY))
+	__asm volatile ("outb %%al, %0" : : "Nd" ((uint16_t) PORT_DUMMY))
 
 /* Read a byte from an I/O port. */
-static inline uint8_t inp(uint16_t p)
+static inline uint8_t
+inp (uint16_t p)
 {
-	uint8_t v;
-	__asm volatile("inb %1, %0" : "=a" (v) : "Nd" (p));
-	return v;
+  uint8_t v;
+  __asm volatile ("inb %1, %0":"=a" (v) : "Nd" (p));
+  return v;
 }
 
 /* Read a byte from an I/O port, with a small wait. */
-static inline uint8_t inp_w(uint16_t p)
+static inline uint8_t
+inp_w (uint16_t p)
 {
-	uint8_t v = inp(p);
-	IO_WAIT;
-	return v;
+  uint8_t v = inp (p);
+  IO_WAIT;
+  return v;
 }
 
 /* Write a byte to an I/O port. */
-static inline void outp(uint16_t p, uint8_t v)
+static inline void
+outp (uint16_t p, uint8_t v)
 {
-	__asm volatile("outb %1, %0" : : "Nd" (p), "a" (v));
+  __asm volatile ("outb %1, %0" : : "Nd" (p), "a" (v));
 }
 
 /* Write a byte to an I/O port, then add a small wait. */
-static inline void outp_w(uint16_t p, uint8_t v)
+static inline void
+outp_w (uint16_t p, uint8_t v)
 {
-	outp(p, v);
-	IO_WAIT;
+  outp (p, v);
+  IO_WAIT;
 }
 
 /* Read a longword from an I/O port. */
-static inline uint32_t inpd(uint16_t p)
+static inline uint32_t
+inpd (uint16_t p)
 {
-	uint32_t v;
-	__asm volatile("inl %1, %0" : "=a" (v) : "Nd" (p));
-	return v;
+  uint32_t v;
+  __asm volatile ("inl %1, %0":"=a" (v):"Nd" (p));
+  return v;
 }
 
 /* Read a longword from an I/O port, with a small wait. */
-static inline uint32_t inpd_w(uint16_t p)
+static inline uint32_t
+inpd_w (uint16_t p)
 {
-	uint32_t v = inpd(p);
-	IO_WAIT;
-	return v;
+  uint32_t v = inpd (p);
+  IO_WAIT;
+  return v;
 }
 
 /* Write a longword to an I/O port. */
-static inline void outpd(uint16_t p, uint32_t v)
+static inline void
+outpd (uint16_t p, uint32_t v)
 {
-	__asm volatile("outl %1, %0" : : "Nd" (p), "a" (v));
+  __asm volatile ("outl %1, %0" : : "Nd" (p), "a" (v));
 }
 
 /* Write a longword to an I/O port, then add a small wait. */
-static inline void outpd_w(uint16_t p, uint32_t v)
+static inline void
+outpd_w (uint16_t p, uint32_t v)
 {
-	outpd(p, v);
-	IO_WAIT;
+  outpd (p, v);
+  IO_WAIT;
 }
 
 #undef IO_WAIT
@@ -440,10 +480,11 @@ static inline void outpd_w(uint16_t p, uint32_t v)
  *   * If index is or'ed with CMOS_NMI_DIS, this will disable NMI; call
  *     cmos_home later to re-enable NMI.
  */
-static inline uint8_t cmos_read(uint8_t idx)
+static inline uint8_t
+cmos_read (uint8_t idx)
 {
-	outp_w(PORT_CMOS_IDX, idx);
-	return inp_w(PORT_CMOS_DATA);
+  outp_w (PORT_CMOS_IDX, idx);
+  return inp_w (PORT_CMOS_DATA);
 }
 
 /*
@@ -451,80 +492,85 @@ static inline uint8_t cmos_read(uint8_t idx)
  *   * If index is or'ed with CMOS_NMI_DIS, this will disable NMI; call
  *     cmos_home later to re-enable NMI.
  */
-static inline void cmos_write(uint8_t idx, uint8_t v)
+static inline void
+cmos_write (uint8_t idx, uint8_t v)
 {
-	outp_w(PORT_CMOS_IDX, idx);
-	outp_w(PORT_CMOS_DATA, v);
+  outp_w (PORT_CMOS_IDX, idx);
+  outp_w (PORT_CMOS_DATA, v);
 }
 
 /*
  * Reset the CMOS index register to point to the "default" status register
  * D, & also (re-)enable NMI.
  */
-static inline void cmos_home(void)
+static inline void
+cmos_home (void)
 {
-	outp_w(PORT_CMOS_IDX, CMOS_RTC_STA_D);
+  outp_w (PORT_CMOS_IDX, CMOS_RTC_STA_D);
 }
 
 /* Disable interrupts. */
-static inline void cli(void)
+static inline void
+cli (void)
 {
-	__asm volatile("cli" : : : "memory");
+  __asm volatile ("cli" : : : "memory");
 }
 
 /* Enable interrupts. */
-static inline void sti(void)
+static inline void
+sti (void)
 {
-	__asm volatile("sti" : : : "memory");
+  __asm volatile ("sti" : : : "memory");
 }
 
 /*
  * Temporary enable interrupts, wait for an IRQ, then disable interrupts
  * (again).
  */
-static inline void yield_to_irq(void)
+static inline void
+yield_to_irq (void)
 {
-	__asm volatile("sti; hlt; cli" : : : "memory");
+  __asm volatile ("sti; hlt; cli" : : : "memory");
 }
 
 /* Read a byte at a segment:offset address. */
-static inline uint8_t peekb(uint16_t s, uint32_t o)
+static inline uint8_t
+peekb (uint16_t s, uint32_t o)
 {
-	uint16_t scratch;
-	uint8_t v;
-	__asm volatile(	"movw %%ds, %0; "
-			"movw %2, %%ds; "
-			"movb %a3, %1; "
-			"movw %0, %%ds"
-	    : "=&g" (scratch), "=r" (v)
-	    : "rm" (s), "p" (o));
-	return v;
+  uint16_t scratch;
+  uint8_t v;
+  __asm volatile ("movw %%ds, %0; "
+		  "movw %2, %%ds; "
+		  "movb %a3, %1; "
+		  "movw %0, %%ds"
+		  : "=&g" (scratch), "=r" (v)
+		  : "rm" (s), "p" (o));
+  return v;
 }
 
 /* Write a byte at a segment:offset address. */
-static inline void pokeb(uint16_t s, uint32_t o, uint8_t v)
+static inline void
+pokeb (uint16_t s, uint32_t o, uint8_t v)
 {
-	uint16_t scratch;
-	__asm volatile(	"movw %%ds, %0; "
-			"movw %1, %%ds; "
-			"movb %3, %a2; "
-			"movw %0, %%ds"
-	    : "=&g" (scratch)
-	    : "rm" (s), "p" (o), "r" (v)
-	    : "memory");
+  uint16_t scratch;
+  __asm volatile ("movw %%ds, %0; "
+		  "movw %1, %%ds; "
+		  "movb %3, %a2; "
+		  "movw %0, %%ds":"=&g" (scratch):"rm" (s), "p" (o),
+		  "r" (v):"memory");
 }
 
 /* Write a shortword at a segment:offset address. */
-static inline void poke(uint16_t s, uint32_t o, uint16_t v)
+static inline void
+poke (uint16_t s, uint32_t o, uint16_t v)
 {
-	uint16_t scratch;
-	__asm volatile(	"movw %%ds, %0; "
-			"movw %1, %%ds; "
-			"movw %3, %a2; "
-			"movw %0, %%ds"
-	    : "=&g" (scratch)
-	    : "rm" (s), "p" (o), "r" (v)
-	    : "memory");
+  uint16_t scratch;
+  __asm volatile ("movw %%ds, %0; "
+		  "movw %1, %%ds; "
+		  "movw %3, %a2; "
+		  "movw %0, %%ds"
+		  : "=&g" (scratch)
+		  : "rm" (s), "p" (o), "r" (v):"memory");
 }
 
 #endif

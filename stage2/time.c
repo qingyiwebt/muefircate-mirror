@@ -46,28 +46,29 @@
 #define PITC_MODE3	0x06		/* mode 3 (square wave) */
 #define PITC_BCD	0x01		/* BCD (vs. binary) mode */
 
-void time_init(bparm_t *bparms)
+void
+time_init (bparm_t * bparms)
 {
-	uint16_t retries = 0xffff;
-	uint8_t sta;
-	/* Program the 8253/8254 PIT for 18.2 Hz operation on IRQ 0. */
-	outp_w(PIT_CMD, PITC_SEL0 | PITC_LOHI | PITC_MODE3);
-	outp_w(PIT_DATA0, 0x00);
-	outp_w(PIT_DATA0, 0x00);
-	/*
-	 * Program the RTC CMOS to produce periodic interrupts at 1024 Hz,
-	 * on IRQ 8.  However, disable periodic interrupts, while enabling
-	 * the alarm interrupt.  If the clock is frozen, unfreeze it.
-	 */
-	do
-		sta = cmos_read(CMOS_RTC_STA_A | CMOS_NMI_DIS);
-	while ((sta & RTC_A_UIP) != 0 && retries-- != 0);
-	cmos_write(CMOS_RTC_STA_A | CMOS_NMI_DIS,
-		   (sta & ~RTC_A_RATE_MASK) | RTC_A_RATE_1024HZ);
-	sta = cmos_read(CMOS_RTC_STA_B | CMOS_NMI_DIS);
-	sta &= ~(RTC_B_FREEZE | RTC_B_UPDE_ENA | RTC_B_TICK_ENA);
-	cmos_write(CMOS_RTC_STA_B | CMOS_NMI_DIS, sta | RTC_B_ALRM_ENA);
-	/* Clear any IRQs from the RTC that are still not serviced. */
-	cmos_read(CMOS_RTC_STA_C | CMOS_NMI_DIS);
-	cmos_home();
+  uint16_t retries = 0xffff;
+  uint8_t sta;
+  /* Program the 8253/8254 PIT for 18.2 Hz operation on IRQ 0. */
+  outp_w (PIT_CMD, PITC_SEL0 | PITC_LOHI | PITC_MODE3);
+  outp_w (PIT_DATA0, 0x00);
+  outp_w (PIT_DATA0, 0x00);
+  /*
+   * Program the RTC CMOS to produce periodic interrupts at 1024 Hz,
+   * on IRQ 8.  However, disable periodic interrupts, while enabling
+   * the alarm interrupt.  If the clock is frozen, unfreeze it.
+   */
+  do
+    sta = cmos_read (CMOS_RTC_STA_A | CMOS_NMI_DIS);
+  while ((sta & RTC_A_UIP) != 0 && retries-- != 0);
+  cmos_write (CMOS_RTC_STA_A | CMOS_NMI_DIS,
+	      (sta & ~RTC_A_RATE_MASK) | RTC_A_RATE_1024HZ);
+  sta = cmos_read (CMOS_RTC_STA_B | CMOS_NMI_DIS);
+  sta &= ~(RTC_B_FREEZE | RTC_B_UPDE_ENA | RTC_B_TICK_ENA);
+  cmos_write (CMOS_RTC_STA_B | CMOS_NMI_DIS, sta | RTC_B_ALRM_ENA);
+  /* Clear any IRQs from the RTC that are still not serviced. */
+  cmos_read (CMOS_RTC_STA_C | CMOS_NMI_DIS);
+  cmos_home ();
 }

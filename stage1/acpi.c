@@ -31,68 +31,75 @@
 #include "acpi.h"
 #include "stage1/stage1.h"
 
-static void acpi_process_fadt(acpi_fadt_t *fadt)
+static void
+acpi_process_fadt (acpi_fadt_t * fadt)
 {
-	infof(u"  FADT: @0x%lx\r\n", fadt);
-	if (fadt->header.length < offsetof(acpi_fadt_t, iapc_boot_flags) +
-				  sizeof(fadt->iapc_boot_flags))
-		error(u"FADT too small");
-	if ((fadt->iapc_boot_flags & FADT_IAPC_NOVGA) != 0)
-		warn(u"FADT: no VGA h/w");
-	if ((fadt->iapc_boot_flags & FADT_IAPC_NORTC) != 0)
-		error(u"FADT: no CMOS RTC");
+  infof (u"  FADT: @0x%lx\r\n", fadt);
+  if (fadt->header.length < offsetof (acpi_fadt_t, iapc_boot_flags)
+			    + sizeof (fadt->iapc_boot_flags))
+    error (u"FADT too small");
+  if ((fadt->iapc_boot_flags & FADT_IAPC_NOVGA) != 0)
+    warn (u"FADT: no VGA h/w");
+  if ((fadt->iapc_boot_flags & FADT_IAPC_NORTC) != 0)
+    error (u"FADT: no CMOS RTC");
 }
 
-static void acpi_process_madt(acpi_madt_t *madt)
+static void
+acpi_process_madt (acpi_madt_t * madt)
 {
-	infof(u"  MADT: @0x%lx\r\n", madt);
-	if ((madt->flags & MADT_PCAT_COMPAT) == 0)
-		error(u"MADT: no 8259");
+  infof (u"  MADT: @0x%lx\r\n", madt);
+  if ((madt->flags & MADT_PCAT_COMPAT) == 0)
+    error (u"MADT: no 8259");
 }
 
-void acpi_init(acpi_xsdp_t *rsdp)
+void
+acpi_init (acpi_xsdp_t * rsdp)
 {
-	static const char expect_rsdp_sig[8] = "RSD PTR ",
-	    expect_xsdt_sig[4] = "XSDT",
-	    fadt_sig[4] = "FACP", madt_sig[4] = "APIC";
-	acpi_xsdt_t *xsdt;
-	bdat_rsdp_t *bd_rsdp;
-	uint32_t sz;
-	size_t num_tabs, i;
-	/* Do some quick checks on the RSDP. */
-	infof(u"ACPI 2+ RSDP: @0x%lx", rsdp);
-	if (memcmp(rsdp->signature, expect_rsdp_sig, 8) != 0)
-		error(u"RSDP has bad sig.");
-	if (rsdp->revision < 2)
-		error(u"RSDP revision too old");
-	sz = rsdp->length;
-	if (sz < sizeof(acpi_xsdp_t))
-		error(u"RSDP too small");
-	if (compute_cksum(rsdp, offsetof(acpi_xsdp_t, length)) != 0 ||
-	    compute_cksum(rsdp, sz) != 0)
-		error(u"RSDP has bad checksums");
-	/* Do some quick checks on the XSDT. */
-	xsdt = (acpi_xsdt_t *)rsdp->xsdt;
-	infof(u"  XSDT: @0x%lx\r\n", xsdt);
-	if (memcmp(xsdt->header.signature, expect_xsdt_sig, 4) != 0)
-		error(u"XSDT has bad sig.");
-	sz = xsdt->header.length;
-	if (sz < sizeof(acpi_header_t) + sizeof(uint64_t))
-		error(u"XSDT too small");
-	if (compute_cksum(xsdt, sz) != 0)
-		error(u"XSDT has bad checksum");
-	/* Go through the tables in the XSDT. */
-	num_tabs = (sz - sizeof(acpi_header_t)) / sizeof(uint64_t);
-	for (i = 0; i < num_tabs; ++i) {
-		acpi_table_union_t *tab =
-		    (acpi_table_union_t *)xsdt->tables[i];
-		if (memcmp(tab->header.signature, fadt_sig, 4) == 0)
-			acpi_process_fadt(&tab->fadt);
-		else if (memcmp(tab->header.signature, madt_sig, 4) == 0)
-			acpi_process_madt(&tab->madt);
-	}
-	/* Add a boot parameter for the RSDP. */
-	bd_rsdp = bparm_add(BP_RSDP, sizeof(bdat_rsdp_t));
-	bd_rsdp->rsdp_phy_addr = rsdp;
-	bd_rsdp->rsdp_sz = sz;
+  static const char expect_rsdp_sig[8] = "RSD PTR ",
+		    expect_xsdt_sig[4] = "XSDT",
+		    fadt_sig[4] = "FACP", madt_sig[4] = "APIC";
+  acpi_xsdt_t *xsdt;
+  bdat_rsdp_t *bd_rsdp;
+  uint32_t sz;
+  size_t num_tabs, i;
+
+  /* Do some quick checks on the RSDP. */
+  infof (u"ACPI 2+ RSDP: @0x%lx", rsdp);
+  if (memcmp (rsdp->signature, expect_rsdp_sig, 8) != 0)
+    error (u"RSDP has bad sig.");
+  if (rsdp->revision < 2)
+    error (u"RSDP revision too old");
+  sz = rsdp->length;
+  if (sz < sizeof (acpi_xsdp_t))
+    error (u"RSDP too small");
+  if (compute_cksum (rsdp, offsetof (acpi_xsdp_t, length)) != 0
+      || compute_cksum (rsdp, sz) != 0)
+    error (u"RSDP has bad checksums");
+
+  /* Do some quick checks on the XSDT. */
+  xsdt = (acpi_xsdt_t *) rsdp->xsdt;
+  infof (u"  XSDT: @0x%lx\r\n", xsdt);
+  if (memcmp (xsdt->header.signature, expect_xsdt_sig, 4) != 0)
+    error (u"XSDT has bad sig.");
+  sz = xsdt->header.length;
+  if (sz < sizeof (acpi_header_t) + sizeof (uint64_t))
+    error (u"XSDT too small");
+  if (compute_cksum (xsdt, sz) != 0)
+    error (u"XSDT has bad checksum");
+
+  /* Go through the tables in the XSDT. */
+  num_tabs = (sz - sizeof (acpi_header_t)) / sizeof (uint64_t);
+  for (i = 0; i < num_tabs; ++i)
+    {
+      acpi_table_union_t *tab = (acpi_table_union_t *) xsdt->tables[i];
+      if (memcmp (tab->header.signature, fadt_sig, 4) == 0)
+	acpi_process_fadt (&tab->fadt);
+      else if (memcmp (tab->header.signature, madt_sig, 4) == 0)
+	acpi_process_madt (&tab->madt);
+    }
+
+  /* Add a boot parameter for the RSDP. */
+  bd_rsdp = bparm_add (BP_RSDP, sizeof (bdat_rsdp_t));
+  bd_rsdp->rsdp_phy_addr = rsdp;
+  bd_rsdp->rsdp_sz = sz;
 }

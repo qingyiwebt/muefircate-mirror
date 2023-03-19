@@ -29,56 +29,58 @@
 
 /* GNU ld compatible linker script for the 16-bit portion of stage 2. */
 
-OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
-OUTPUT_ARCH(i386)
-ENTRY(_stext16)
+OUTPUT_FORMAT ("elf32-i386", "elf32-i386", "elf32-i386")
+OUTPUT_ARCH (i386)
+ENTRY (_stext16)
 
 SECTIONS
 {
-	HIDDEN(KIBYTE = 1024);
+  HIDDEN (KIBYTE = 1024);
 
-	/*
-	 * Place read/write initialized data before read-only data, & place
-	 * data before text.  This arrangement more closely mimics the
-	 * memory layout that will arise at run time, with the EBDA coming
-	 * right above the first block of base memory, & the "BIOS" code
-	 * appearing only further up.
-	 */
+  /*
+   * Place read/write initialized data before read-only data, & place data
+   * before text.  This arrangement more closely mimics the memory layout
+   * that will arise at run time, with the EBDA coming right above the first
+   * block of base memory, & the "BIOS" code appearing only further up.
+   */
 
-	.data 0 : {
-		_sdata16 = .;
+  .data 0 :
+  {
+    _sdata16 = .;
 
-		*(.data .data.* .gnu.linkonce.d.*)
+    *(.data .data.* .gnu.linkonce.d.*)
 
-		. = ALIGN(0x10);
-		*(.rodata .rodata.* .gnu.linkonce.r.*)
+    . = ALIGN (0x10);
+    *(.rodata .rodata.* .gnu.linkonce.r.*)
 
-		. = ALIGN(0x10);
-		_edata16 = .;
-	}
+    . = ALIGN (0x10);
+    _edata16 = .;
+  }
 
-	.bss : {
-		*(.bss .bss.* .gnu.linkonce.b.*)
-		*(COMMON)
+  .bss :
+  {
+    *(.bss .bss.* .gnu.linkonce.b.*)
+    *(COMMON)
 
-		. = ALIGN(KIBYTE);
-		_end16 = .;
-	}
+    . = ALIGN (KIBYTE);
+    _end16 = .;
+  }
 
-	. = .;
-	_END16_KIB = ABSOLUTE(. / KIBYTE);
+  . = .;
+  _END16_KIB = ABSOLUTE (. / KIBYTE);
 
-	.text 0 : AT(ALIGN(. + 1, CONSTANT(COMMONPAGESIZE))) {
-		_stext16 = .;
+  .text 0 : AT (ALIGN (. + 1, CONSTANT (COMMONPAGESIZE)))
+  {
+    _stext16 = .;
 
-		*(.text .stub .text.* .gnu.linkonce.t.*)
-		*(.gnu.warning)
+    *(.text .stub .text.* .gnu.linkonce.t.*)
+    *(.gnu.warning)
 
-		_etext16 = .;
-	}
+    _etext16 = .;
+  }
 
-	/DISCARD/ : {
-		*(.note.GNU-stack .gnu_* .gnu.* .stab* .debug_* .eh_frame
-		  .comment)
-	}
+  /DISCARD/ :
+  {
+    *(.note.GNU-stack .gnu_* .gnu.* .stab* .debug_* .eh_frame .comment)
+  }
 }

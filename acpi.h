@@ -44,28 +44,31 @@
 #define FADT_IAPC_NORTC		(1 <<  5)
 
 /* Structure of a Multiple APIC Description Table (MADT). */
-typedef struct __attribute__((packed)) {
-	acpi_header_t header;		/* header with signature "APIC" */
-	uint32_t lapic_phy_addr;	/* local APIC address */
-	uint32_t flags;			/* multiple APIC flags */
-	char ics[];			/* interrupt controller structures */
+typedef struct __attribute__ ((packed))
+{
+  acpi_header_t header;			/* header with signature "APIC" */
+  uint32_t lapic_phy_addr;		/* local APIC address */
+  uint32_t flags;			/* multiple APIC flags */
+  char ics[];				/* interrupt controller structures */
 } acpi_madt_t;
 
 /* Flags in acpi_madt_t::flags. */
 #define MADT_PCAT_COMPAT	(1 <<  0)
 
 /* Union of ACPI table types. :-) */
-typedef union __attribute__((packed)) {
-	acpi_header_t header;
-	acpi_xsdt_t xsdt;
-	acpi_fadt_t fadt;
-	acpi_madt_t madt;
+typedef union __attribute__ ((packed))
+{
+  acpi_header_t header;
+  acpi_xsdt_t xsdt;
+  acpi_fadt_t fadt;
+  acpi_madt_t madt;
 } acpi_table_union_t;
 
 /* Header of an interrupt controller structure within an MADT. */
-typedef struct __attribute__((packed)) {
-	uint8_t type;			/* structure type */
-	uint8_t length;			/* structure length */
+typedef struct __attribute__ ((packed))
+{
+  uint8_t type;				/* structure type */
+  uint8_t length;			/* structure length */
 } acpi_madt_ic_header_t;
 
 /* Values in acpi_madt_ic_header_t::type. */
@@ -82,28 +85,28 @@ typedef struct __attribute__((packed)) {
 #define MADT_IC_LX2APIC_NMI	0xa	/* local x2APIC NMI */
 
 /* Interrupt controller structure for an I/O APIC. */
-typedef struct __attribute__((packed))
+typedef struct __attribute__ ((packed))
 {
-	acpi_madt_ic_header_t header;	/* header, type MADT_IC_IOAPIC */
-	uint8_t id;			/* I/O APIC id. */
-	uint8_t reserved;		/* reserved */
-	uint32_t ioapic_phy_addr;	/* I/O APIC address */
+  acpi_madt_ic_header_t header	;	/* header, type MADT_IC_IOAPIC */
+  uint8_t id;				/* I/O APIC id. */
+  uint8_t reserved;			/* reserved */
+  uint32_t ioapic_phy_addr;		/* I/O APIC address */
 } acpi_madt_ic_ioapic_t;
 
 /* Interrupt controller structure for a local APIC address override. */
-typedef struct __attribute__((packed))
+typedef struct __attribute__ ((packed))
 {
-	acpi_madt_ic_header_t header;	/* header, type MADT_IC_LAPIC_ADDR */
-	uint8_t reserved[2];		/* reserved */
-	ptr64_t lapic_phy_addr64;	/* 64-bit local APIC address */
+  acpi_madt_ic_header_t header;		/* header, type MADT_IC_LAPIC_ADDR */
+  uint8_t reserved[2];			/* reserved */
+  ptr64_t lapic_phy_addr64;		/* 64-bit local APIC address */
 } acpi_madt_ic_lapic_addr_t;
 
 /* Union of interrupt controller structure types. :-) :-) */
-typedef union __attribute__((packed))
+typedef union __attribute__ ((packed))
 {
-	acpi_madt_ic_header_t header;
-	acpi_madt_ic_ioapic_t ioapic;
-	acpi_madt_ic_lapic_addr_t lapic_addr;
+  acpi_madt_ic_header_t header;
+  acpi_madt_ic_ioapic_t ioapic;
+  acpi_madt_ic_lapic_addr_t lapic_addr;
 } acpi_madt_ic_union_t;
 
 #endif

@@ -29,42 +29,44 @@
 
 /* GNU ld compatible linker script for stage 2. */
 
-OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
-OUTPUT_ARCH(i386)
-ENTRY(_start)
+OUTPUT_FORMAT ("elf32-i386", "elf32-i386", "elf32-i386")
+OUTPUT_ARCH (i386)
+ENTRY (_start)
 
 PHDRS
 {
-	text PT_LOAD FILEHDR PHDRS;
+  text PT_LOAD FILEHDR PHDRS;
 }
 
 SECTIONS
 {
-	. = 0x0c001000 + SIZEOF_HEADERS;
+  . = 0x0c001000 + SIZEOF_HEADERS;
 
-	.text : {
-		*(.text .stub .text.* .gnu.linkonce.t.*)
-		*(.gnu.warning)
-		PROVIDE(_etext = .);
+  .text :
+  {
+    *(.text .stub .text.* .gnu.linkonce.t.*)
+    *(.gnu.warning)
+    PROVIDE (_etext = .);
 
-		. = ALIGN(0x10);
-		*(.rodata .rodata.* .gnu.linkonce.r.*)
+    . = ALIGN (0x10);
+    *(.rodata .rodata.* .gnu.linkonce.r.*)
 
-		. = ALIGN(0x10);
-		*(.data .data.* .gnu.linkonce.d.*)
-		PROVIDE(_edata = .);
+    . = ALIGN (0x10);
+    *(.data .data.* .gnu.linkonce.d.*)
+    PROVIDE (_edata = .);
 
-		. = ALIGN(0x10);
-	} :text
+    . = ALIGN (0x10);
+  } :text
 
-	.bss : {
-		*(.bss .bss.* .gnu.linkonce.b.*)
-		*(COMMON)
-		PROVIDE(_end = .);
-	} :text
+  .bss :
+  {
+    *(.bss .bss.* .gnu.linkonce.b.*)
+    *(COMMON)
+    PROVIDE (_end = .);
+  } :text
 
-	/DISCARD/ : {
-		*(.note.GNU-stack .gnu_* .gnu.* .stab* .debug_* .eh_frame
-		  .comment)
-	}
+  /DISCARD/ :
+  {
+    *(.note.GNU-stack .gnu_* .gnu.* .stab* .debug_* .eh_frame .comment)
+  }
 }

@@ -40,21 +40,21 @@
 
 /* Fabricate a 32-bit magic number from 4 characters. */
 #define MAGIC32(a, b, c, d) \
-	((uint32_t)(unsigned char)(a)	    | \
-	 (uint32_t)(unsigned char)(b) <<  8 | \
-	 (uint32_t)(unsigned char)(c) << 16 | \
-	 (uint32_t)(unsigned char)(d) << 24)
+	((uint32_t) (unsigned char) (a)	      | \
+	 (uint32_t) (unsigned char) (b) <<  8 | \
+	 (uint32_t) (unsigned char) (c) << 16 | \
+	 (uint32_t) (unsigned char) (d) << 24)
 
 /* Fabricate a 64-bit magic number from 8 characters. */
 #define MAGIC64(a, b, c, d, e, f, g, h) \
-	((uint64_t)(unsigned char)(a)	    | \
-	 (uint64_t)(unsigned char)(b) <<  8 | \
-	 (uint64_t)(unsigned char)(c) << 16 | \
-	 (uint64_t)(unsigned char)(d) << 24 | \
-	 (uint64_t)(unsigned char)(e) << 32 | \
-	 (uint64_t)(unsigned char)(f) << 40 | \
-	 (uint64_t)(unsigned char)(g) << 48 | \
-	 (uint64_t)(unsigned char)(h) << 56)
+	((uint64_t) (unsigned char) (a)	      | \
+	 (uint64_t) (unsigned char) (b) <<  8 | \
+	 (uint64_t) (unsigned char) (c) << 16 | \
+	 (uint64_t) (unsigned char) (d) << 24 | \
+	 (uint64_t) (unsigned char) (e) << 32 | \
+	 (uint64_t) (unsigned char) (f) << 40 | \
+	 (uint64_t) (unsigned char) (g) << 48 | \
+	 (uint64_t) (unsigned char) (h) << 56)
 
 /*
  * Address range types, in the manner of BIOS int 0x15, ax = 0xe820.  These
@@ -70,18 +70,19 @@
 #define E820_PMEM	7U		/* persistent memory (ACPI 6.3) */
 
 /* Wait for an asynchronous interrupt. */
-static inline void hlt(void)
+static inline void
+hlt (void)
 {
-	__asm volatile("hlt" : : : "memory");
+  __asm volatile ("hlt" : : : "memory");
 }
 
 /* Read an x86 model-specific register. */
-static inline uint64_t rdmsr(uint32_t idx)
+static inline uint64_t
+rdmsr (uint32_t idx)
 {
-	uint32_t hi, lo;
-	__asm volatile("rdmsr" : "=d" (hi), "=a" (lo)
-			       : "c" (idx));
-	return (uint64_t)hi << 32 | lo;
+  uint32_t hi, lo;
+  __asm volatile ("rdmsr" : "=d" (hi), "=a" (lo) : "c" (idx));
+  return (uint64_t) hi << 32 | lo;
 }
 
 /* Model-specific register numbers. */
@@ -90,20 +91,21 @@ static inline uint64_t rdmsr(uint32_t idx)
 #define     MCEN_LCMV	0x00400000U
 
 /* Obtain processor information. */
-static inline void cpuid(uint32_t leaf, uint32_t *pa, uint32_t *pb,
-					uint32_t *pc, uint32_t *pd)
+static inline void
+cpuid (uint32_t leaf, uint32_t * pa, uint32_t * pb,
+       uint32_t * pc, uint32_t * pd)
 {
-	uint32_t a, b, c, d;
-	__asm volatile("cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d)
-			       : "0" (leaf));
-	if (pa)
-		*pa = a;
-	if (pb)
-		*pb = b;
-	if (pc)
-		*pc = c;
-	if (pd)
-		*pd = d;
+  uint32_t a, b, c, d;
+  __asm volatile ("cpuid" : "=a" (a), "=b" (b), "=c" (c), "=d" (d)
+			  : "0" (leaf));
+  if (pa)
+    *pa = a;
+  if (pb)
+    *pb = b;
+  if (pc)
+    *pc = c;
+  if (pd)
+    *pd = d;
 }
 
 /* Bit fields in various CPUID leaves. */

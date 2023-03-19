@@ -41,70 +41,76 @@
 #include "common.h"
 
 /* "PCID" boot data, describing a single PCI device. */
-typedef struct __attribute__((packed)) {
-	uint32_t pci_locn;		/* PCI segment, bus, device, fn. */
-	uint32_t pci_id;		/* vendor & device id. */
-	uint32_t class_if;		/* class, subclass, prog. IF, &
+typedef struct __attribute__ ((packed))
+{
+  uint32_t pci_locn;			/* PCI segment, bus, device, fn. */
+  uint32_t pci_id;			/* vendor & device id. */
+  uint32_t class_if;			/* class, subclass, prog. IF, &
 					   rev. id. */
-	uint16_t rimg_seg;		/* real mode segment where option
+  uint16_t rimg_seg;			/* real mode segment where option
 					   ROM image is (or has been copied
 					   to); 0 if no ROM image */
-	uint16_t rimg_rt_seg;		/* final location of option ROM code
+  uint16_t rimg_rt_seg;			/* final location of option ROM code
 					   after initialization (for PCI 3+
 					   compliant ROM images) */
-	uint32_t rimg_sz;		/* ROM image size */
+  uint32_t rimg_sz;			/* ROM image size */
 } bdat_pci_dev_t;
 
 /*
  * "BMEM" boot data, describing base memory availability at boot time &
  * run time.
  */
-typedef struct __attribute__((packed)) {
-	uint16_t boottime_bmem_bot_seg;	/* real mode seg. for start of
+typedef struct __attribute__ ((packed))
+{
+  uint16_t boottime_bmem_bot_seg;	/* real mode seg. for start of
 					   base mem. avail. to stage 2 at
 					   boot time; stage 2 can free up
 					   the mem. at [0, boottime_bmem_bot
 					   * PARA_SIZE - 1] once it consumes
 					   boot params. */
-	uint16_t runtime_bmem_top_seg;	/* real mode seg. for end of base
+  uint16_t runtime_bmem_top_seg;	/* real mode seg. for end of base
 					   mem. avail. at run time */
 } bdat_bmem_t;
 
 /* "MRNG" boot data, describing a single memory address range at run time. */
-typedef struct __attribute__((packed)) {
-	uint64_t start;			/* starting physical address */
-	uint64_t len;			/* siae of memory address range */
-	uint32_t e820_type;		/* mem. type as in int 0x15, 0xe820 */
-	uint32_t e820_ext_attr;		/* extended memory attributes as in
+typedef struct __attribute__ ((packed))
+{
+  uint64_t start;			/* starting physical address */
+  uint64_t len;				/* siae of memory address range */
+  uint32_t e820_type;			/* mem. type as in int 0x15, 0xe820 */
+  uint32_t e820_ext_attr;		/* extended memory attributes as in
 					   int 0x15, ax = 0xe820 */
-	uint64_t uefi_attr;		/* more memory attributes (including
+  uint64_t uefi_attr;			/* more memory attributes (including
 					   cacheability attributes) as in
-					   UEFI BS->GetMemoryMap(...) */
+					   UEFI BS->GetMemoryMap (...) */
 } bdat_mem_range_t;
 
 /*
  * "RSDP" boot data, saying how to find the ACPI Root System Description
  * Pointer (RSDP) structure.
  */
-typedef struct __attribute__((packed)) {
-	ptr64_t rsdp_phy_addr;		/* 64-bit physical address of RSDP */
-	uint32_t rsdp_sz;		/* size of RSDP */
+typedef struct __attribute__ ((packed))
+{
+  ptr64_t rsdp_phy_addr;		/* 64-bit physical address of RSDP */
+  uint32_t rsdp_sz;			/* size of RSDP */
 } bdat_rsdp_t;
 
 /* Node type for linked list of boot parameters. */
-struct __attribute__((packed)) bparm {
-	struct bparm *next;		/* pointer to next boot param. node */
+struct __attribute__ ((packed)) bparm
+{
+  struct bparm *next;			/* pointer to next boot param. node */
 #ifndef __x86_64__
-	uint32_t reserved;
+  uint32_t reserved;
 #endif
-	uint32_t type;			/* "PCID", etc. */
-	uint32_t size;			/* size of boot param. data only */
-	union {				/* boot param. data */
-		bdat_pci_dev_t pci_dev;
-		bdat_bmem_t bmem;
-		bdat_mem_range_t mem_range;
-		bdat_rsdp_t rsdp;
-	} u[];
+  uint32_t type;			/* "PCID", etc. */
+  uint32_t size;			/* size of boot param. data only */
+  union
+  {					/* boot param. data */
+    bdat_pci_dev_t pci_dev;
+    bdat_bmem_t bmem;
+    bdat_mem_range_t mem_range;
+    bdat_rsdp_t rsdp;
+  } u[];
 };
 
 typedef struct bparm bparm_t;

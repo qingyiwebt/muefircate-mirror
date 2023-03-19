@@ -34,50 +34,58 @@
 #include "stage2/stage2.h"
 #include "stage2/pci.h"
 
-uint32_t in_pci_d_maybe_unaligned(uint32_t locn, uint8_t off)
+uint32_t
+in_pci_d_maybe_unaligned (uint32_t locn, uint8_t off)
 {
-	uint8_t aoff = off & ~(uint8_t)3;
-	switch (off & 3) {
-	    default:
-		return in_pci_d_aligned(locn, off);
-	    case 1:
-		return in_pci_d_aligned(locn, aoff) >> 8 |
-		       in_pci_d_aligned(locn, aoff + 4) << 24;
-	    case 2:
-		return in_pci_d_aligned(locn, aoff) >> 16 |
-		       in_pci_d_aligned(locn, aoff + 4) << 16;
-	    case 3:
-		return in_pci_d_aligned(locn, aoff) >> 24 |
-		       in_pci_d_aligned(locn, aoff + 4) << 8;
-	}
+  uint8_t aoff = off & ~(uint8_t) 3;
+  switch (off & 3)
+    {
+    default:
+      return in_pci_d_aligned (locn, off);
+    case 1:
+      return in_pci_d_aligned (locn, aoff) >> 8
+	     | in_pci_d_aligned (locn, aoff + 4) << 24;
+    case 2:
+      return in_pci_d_aligned (locn, aoff) >> 16
+	     | in_pci_d_aligned (locn, aoff + 4) << 16;
+    case 3:
+      return in_pci_d_aligned (locn, aoff) >> 24
+	     | in_pci_d_aligned (locn, aoff + 4) << 8;
+    }
 }
 
-void out_pci_d_maybe_unaligned(uint32_t locn, uint8_t off, uint32_t v)
+void
+out_pci_d_maybe_unaligned (uint32_t locn, uint8_t off, uint32_t v)
 {
-	uint8_t aoff = off & ~(uint8_t)3;
-	switch (off & 3) {
-	    default:
-		out_pci_d_aligned(locn, off, v);
-	    case 1:
-		out_pci_d_aligned(locn, aoff,
-		    (in_pci_d_aligned(locn, aoff) & 0x000000ffU) | v << 8);
-		out_pci_d_aligned(locn, aoff + 4,
-		    (in_pci_d_aligned(locn, aoff + 4) & 0xffffff00U) |
-		    v >> 24);
-		break;
-	    case 2:
-		out_pci_d_aligned(locn, aoff,
-		    (in_pci_d_aligned(locn, aoff) & 0x0000ffffU) | v << 16);
-		out_pci_d_aligned(locn, aoff + 4,
-		    (in_pci_d_aligned(locn, aoff + 4) & 0xffff0000U) |
-		    v>> 16);
-		break;
-	    case 3:
-		out_pci_d_aligned(locn, aoff,
-		    (in_pci_d_aligned(locn, aoff) & 0x00ffffffU) | v << 24);
-		out_pci_d_aligned(locn, aoff + 4,
-		    (in_pci_d_aligned(locn, aoff + 4) & 0xff000000U) | v >> 8);
-	}
+  uint8_t aoff = off & ~(uint8_t) 3;
+  switch (off & 3)
+    {
+    default:
+      out_pci_d_aligned (locn, off, v);
+    case 1:
+      out_pci_d_aligned (locn, aoff,
+			 (in_pci_d_aligned (locn, aoff) & 0x000000ffU)
+			 | v << 8);
+      out_pci_d_aligned (locn, aoff + 4,
+			 (in_pci_d_aligned (locn, aoff + 4) & 0xffffff00U)
+			 | v >> 24);
+      break;
+    case 2:
+      out_pci_d_aligned (locn, aoff,
+			 (in_pci_d_aligned (locn, aoff) & 0x0000ffffU)
+			 | v << 16);
+      out_pci_d_aligned (locn, aoff + 4,
+			 (in_pci_d_aligned (locn, aoff + 4) & 0xffff0000U)
+			 | v >> 16);
+      break;
+    case 3:
+      out_pci_d_aligned (locn, aoff,
+			 (in_pci_d_aligned (locn, aoff) & 0x00ffffffU)
+			 | v << 24);
+      out_pci_d_aligned (locn, aoff + 4,
+			 (in_pci_d_aligned (locn, aoff + 4) & 0xff000000U)
+			 | v >> 8);
+    }
 }
 
 /*
@@ -86,18 +94,19 @@ void out_pci_d_maybe_unaligned(uint32_t locn, uint8_t off, uint32_t v)
  * space.  If `p_pa' is non-null, set *`p_pa' to the physical address of the
  * memory block.
  */
-void *pci_va_map(uint32_t locn, uint8_t which, size_t sz, uint64_t *p_pa)
+void *
+pci_va_map (uint32_t locn, uint8_t which, size_t sz, uint64_t * p_pa)
 {
-	uint8_t off = 0x10 + 4 * which;
-	uint32_t lo_bar = in_pci_d_aligned(locn, off), hi_bar = 0;
-	uint64_t pa;
-	unsigned pte_flags = 0;
-	if (pci_bar_is_mem64(lo_bar))
-		hi_bar = in_pci_d_aligned(locn, off + 4);
-	pa = (uint64_t)hi_bar << 32 | pci_bar_addr(lo_bar);
-	if (p_pa)
-		*p_pa = pa;
-	if (!pci_bar_is_mempf(lo_bar))
-		pte_flags = PTE_CD;
-	return mem_va_map(pa, sz, pte_flags);
+  uint8_t off = 0x10 + 4 * which;
+  uint32_t lo_bar = in_pci_d_aligned (locn, off), hi_bar = 0;
+  uint64_t pa;
+  unsigned pte_flags = 0;
+  if (pci_bar_is_mem64 (lo_bar))
+    hi_bar = in_pci_d_aligned (locn, off + 4);
+  pa = (uint64_t) hi_bar << 32 | pci_bar_addr (lo_bar);
+  if (p_pa)
+    *p_pa = pa;
+  if (!pci_bar_is_mempf (lo_bar))
+    pte_flags = PTE_CD;
+  return mem_va_map (pa, sz, pte_flags);
 }

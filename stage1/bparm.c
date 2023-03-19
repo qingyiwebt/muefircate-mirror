@@ -40,44 +40,48 @@ static bparm_t *bp_head = NULL, *bp_tail = NULL;
  * size.  Return a pointer to the data field, which the caller should then
  * fill with the actual data.
  */
-void *bparm_add(uint32_t type, uint32_t size)
+void *
+bparm_add (uint32_t type, uint32_t size)
 {
-	bparm_t *bp = bmem_alloc_boottime(sizeof(bparm_t) + size,
-					  sizeof(void *));
-	if (!bp_head)
-		bp_head = bp_tail = bp;
-	else {
-		bp_tail->next = bp;
-		bp_tail = bp;
-	}
-	bp->next = NULL;
-	bp->type = type;
-	bp->size = size;
-	memset(bp->u, 0, size);
-	return bp->u;
+  bparm_t *bp = bmem_alloc_boottime (sizeof (bparm_t) + size, sizeof (void *));
+  if (!bp_head)
+    bp_head = bp_tail = bp;
+  else
+    {
+      bp_tail->next = bp;
+      bp_tail = bp;
+    }
+  bp->next = NULL;
+  bp->type = type;
+  bp->size = size;
+  memset (bp->u, 0, size);
+  return bp->u;
 }
 
 /*
  * Convenience function: add a boot parameter node for a memory address
  * range.  If the range is empty, do nothing.
  */
-bdat_mem_range_t *bparm_add_mem_range(uint64_t start, uint64_t len,
-    uint32_t e820_type, uint32_t e820_ext_attr, uint64_t uefi_attr)
+bdat_mem_range_t *
+bparm_add_mem_range (uint64_t start, uint64_t len,
+		     uint32_t e820_type, uint32_t e820_ext_attr,
+		     uint64_t uefi_attr)
 {
-	bdat_mem_range_t *bd;
-	if (!len)
-		return NULL;
-	bd = bparm_add(BP_MRNG, sizeof(bdat_mem_range_t));
-	bd->start = start;
-	bd->len = len;
-	bd->e820_type = e820_type;
-	bd->e820_ext_attr = e820_ext_attr;
-	bd->uefi_attr = uefi_attr;
-	return bd;
+  bdat_mem_range_t *bd;
+  if (!len)
+    return NULL;
+  bd = bparm_add (BP_MRNG, sizeof (bdat_mem_range_t));
+  bd->start = start;
+  bd->len = len;
+  bd->e820_type = e820_type;
+  bd->e820_ext_attr = e820_ext_attr;
+  bd->uefi_attr = uefi_attr;
+  return bd;
 }
 
 /* Return the linked list of boot parameters built up. */
-bparm_t *bparm_get(void)
+bparm_t *
+bparm_get (void)
 {
-	return bp_head;
+  return bp_head;
 }

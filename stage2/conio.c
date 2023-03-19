@@ -45,67 +45,77 @@
 #include "stage2/stage2.h"
 #include "nanoprintf/nanoprintf.h"
 
-struct our_pf_ctx {
-	size_t pos;
-	char buf[TB_SZ];
+struct our_pf_ctx
+{
+  size_t pos;
+  char buf[TB_SZ];
 };
 
-static void outmem_1(const char *str, size_t n)
+static void
+outmem_1 (const char *str, size_t n)
 {
-	extern int outmem16f(/* ... */);
-	copy_to_tb(str, n);
-	rm16_cs_call((uint32_t)tb16, n, 0, 0, outmem16f);
+  extern int outmem16f (/* ... */);
+  copy_to_tb (str, n);
+  rm16_cs_call ((uint32_t) tb16, n, 0, 0, outmem16f);
 }
 
-static void our_putc_1(int c, void *pv)
+static void
+our_putc_1 (int c, void *pv)
 {
-	struct our_pf_ctx *pctx = pv;
-	if (pctx->pos >= TB_SZ) {
-		outmem_1(pctx->buf, TB_SZ);
-		pctx->pos = 0;
-	}
-	pctx->buf[pctx->pos] = c;
-	++pctx->pos;
+  struct our_pf_ctx *pctx = pv;
+  if (pctx->pos >= TB_SZ)
+    {
+      outmem_1 (pctx->buf, TB_SZ);
+      pctx->pos = 0;
+    }
+  pctx->buf[pctx->pos] = c;
+  ++pctx->pos;
 }
 
-static void our_putc(int c, void *pv)
+static void
+our_putc (int c, void *pv)
 {
-	if ((char)c == '\n')
-		our_putc_1('\r', pv);
-	our_putc_1(c, pv);
+  if ((char) c == '\n')
+    our_putc_1 ('\r', pv);
+  our_putc_1 (c, pv);
 }
 
-int vcprintf(const char *fmt, va_list ap)
+int
+vcprintf (const char *fmt, va_list ap)
 {
-	struct our_pf_ctx ctx = { 0, };
-	int res = npf_vpprintf(our_putc, &ctx, fmt, ap);
-	if (res >= 0 && ctx.pos)
-		outmem_1(ctx.buf, ctx.pos);
-	return res;
+  struct our_pf_ctx ctx = { 0, };
+  int res = npf_vpprintf (our_putc, &ctx, fmt, ap);
+  if (res >= 0 && ctx.pos)
+    outmem_1 (ctx.buf, ctx.pos);
+  return res;
 }
 
-int cprintf(const char *fmt, ...)
+int
+cprintf (const char *fmt, ...)
 {
-	va_list ap;
-	int res;
-	va_start(ap, fmt);
-	res = vcprintf(fmt, ap);
-	va_end(ap);
-	return res;
+  va_list ap;
+  int res;
+  va_start (ap, fmt);
+  res = vcprintf (fmt, ap);
+  va_end (ap);
+  return res;
 }
 
-int cputs(const char *str)
+int
+cputs (const char *str)
 {
-	return cprintf("%s", str);
+  return cprintf ("%s", str);
 }
 
-int putch(char ch)
+int
+putch (char ch)
 {
-	return cprintf("%c", ch);
+  return cprintf ("%c", ch);
 }
 
-int wherex(void)
+int
+wherex (void)
 {
-	extern int wherex16f(/* ... */);
-	return rm16_cs_call(0, 0, 0, 0, wherex16f);
+  extern int wherex16f (/* ... */);
+  return rm16_cs_call (0, 0, 0, 0, wherex16f);
 }
