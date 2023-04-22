@@ -1,4 +1,4 @@
-# Copyright (c) 2020--2022 TK Chia
+# Copyright (c) 2020--2023 TK Chia
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -130,7 +130,8 @@ stage2/16/%.o: stage2/16/%.asm
 
 $(STAGE2): stage2/start.o stage2/clib.o stage2/conio.o stage2/copy-tb.o \
 	   stage2/irq.o stage2/main.o stage2/mem.o stage2/pci.o stage2/rm16.o \
-	   stage2/time.o stage2/usb.o stage2/stage2.ld stage2/16.elf
+	   stage2/time.o stage2/usb.o stage2/usb-ehci.o stage2/usb-xhci.o \
+	   stage2/stage2.ld stage2/16.elf
 	$(CC2) $(LDFLAGS2) -o $@ \
 	    $(filter-out %.ld %.elf, $^) \
 	    $(patsubst %.ld,-T %.ld,$(filter %.ld,$^)) \

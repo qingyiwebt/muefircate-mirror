@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 TK Chia
+ * Copyright (c) 2021--2023 TK Chia
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -84,6 +84,14 @@ extern void time_init (bparm_t *);
 /* usb.c functions. */
 
 extern void usb_init (bparm_t *);
+
+/* usb-ehci.c functions. */
+
+extern void usb_ehci_init_bus (bdat_pci_dev_t *);
+
+/* usb-xhci.c functions. */
+
+extern void usb_xhci_init_bus (bdat_pci_dev_t *);
 
 /* 16/vecs16.asm functions. */
 

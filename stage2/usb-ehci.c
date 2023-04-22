@@ -40,12 +40,6 @@
 #define EHCI_USBLEGCTLSTS_SMI_USB	(1UL <<  0)
 #define EHCI_USBLEGCTLSTS_SMI_OS_ENA	(1UL << 13)
 
-#define XHCI_XECP_LEGACY		0x01
-#define XHCI_USBLEGSUP_BIOS_OWNED	EHCI_USBLEGSUP_BIOS_OWNED
-#define XHCI_USBLEGSUP_OS_OWNED		EHCI_USBLEGSUP_OS_OWNED
-#define XHCI_USBLEGCTLSTS_SMI_USB	EHCI_USBLEGCTLSTS_SMI_USB
-#define XHCI_USBLEGCTLSTS_SMI_OS_ENA	EHCI_USBLEGCTLSTS_SMI_OS_ENA
-
 /* EHCI Host Controller Capability Registers. */
 typedef volatile struct __attribute__ ((packed))
 {
@@ -69,21 +63,6 @@ typedef volatile struct __attribute__ ((packed))
   uint32_t RTSOFF;			/* runtime register space offset */
   uint32_t HCCPARAMS2;			/* capability parameters 2 */
 } usb_xhci_t;
-
-/* XHCI Extended Capability. */
-typedef volatile union __attribute__ ((packed))
-{
-  volatile struct __attribute__ ((packed))
-  {
-    uint8_t CAPID;			/* capability id. */
-    uint8_t NXT;			/* next capability pointer */
-  };
-  volatile struct __attribute__ ((packed))
-  {
-    uint32_t USBLEGSUP;
-    uint32_t USBLEGCTLSTS;
-  } legacy;
-} usb_xhci_xec_t;
 
 static void
 ehci_start_legacy (uint32_t locn, uint32_t hccp)
@@ -116,8 +95,8 @@ ehci_start_legacy (uint32_t locn, uint32_t hccp)
     }
 }
 
-static void
-ehci_init_bus (bdat_pci_dev_t * pd)
+void
+usb_ehci_init_bus (bdat_pci_dev_t * pd)
 {
   uint32_t locn = pd->pci_locn, hccp;
   usb_ehci_t *hc;
@@ -134,28 +113,4 @@ ehci_init_bus (bdat_pci_dev_t * pd)
 	   hc->CAPLENGTH, hc->HCIVERSION, hc->HCSPARAMS, hccp);
   ehci_start_legacy (locn, hccp);
   mem_va_unmap (hc, 0x200);
-}
-
-void
-usb_init (bparm_t * bparms)
-{
-  bparm_t *bp;
-  for (bp = bparms; bp; bp = bp->next)
-    {
-      bdat_pci_dev_t *pd;
-      if (bp->type != BP_PCID)
-	continue;
-      pd = &bp->u->pci_dev;
-      switch (pd->class_if)
-	{
-	case PCI_CIF_BUS_USB_EHCI:
-	  usb_ehci_init_bus (pd);
-	  break;
-	case PCI_CIF_BUS_USB_XHCI:
-	  usb_xhci_init_bus (pd);
-	  break;
-	default:
-	  ;
-	}
-    }
 }
