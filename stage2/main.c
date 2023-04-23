@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pci-common.h"
+#include "common/pci.h"
 #include "stage2/stage2.h"
 
 static void

@@ -29,7 +29,7 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "fv-proto.h"
+#include "stage1/fv-proto.h"
 
 static EFI_GUID gEfiFirmwareVolume2ProtocolGuid
   = {

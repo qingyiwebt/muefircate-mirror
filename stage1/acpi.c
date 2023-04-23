@@ -28,7 +28,7 @@
  */
 
 #include <string.h>
-#include "acpi.h"
+#include "common/acpi.h"
 #include "stage1/stage1.h"
 
 static void

@@ -31,9 +31,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "acpi.h"
-#include "apic.h"
-#include "common.h"
+#include "common/acpi.h"
+#include "common/apic.h"
+#include "common/common.h"
 #include "stage2/stage2.h"
 
 /* ICW1 bit fields for the PICs. */

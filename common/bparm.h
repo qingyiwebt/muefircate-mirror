@@ -34,11 +34,11 @@
  * This header file needs to work in both 32-bit & 64-bit compilation modes.
  */
 
-#ifndef H_BPARM
-#define H_BPARM
+#ifndef H_COMMON_BPARM
+#define H_COMMON_BPARM
 
 #include <inttypes.h>
-#include "common.h"
+#include "common/common.h"
 
 /* "PCID" boot data, describing a single PCI device. */
 typedef struct __attribute__ ((packed))

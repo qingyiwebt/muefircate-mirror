@@ -39,8 +39,8 @@
  * This header file needs to work in both 32-bit & 64-bit compilation modes.
  */
 
-#ifndef H_PCI_COMMON
-#define H_PCI_COMMON
+#ifndef H_COMMON_PCI
+#define H_COMMON_PCI
 
 #include <inttypes.h>
 #include "common.h"

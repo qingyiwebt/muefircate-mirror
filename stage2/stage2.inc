@@ -28,7 +28,7 @@
 %ifndef	_H_STAGE2
 %define	_H_STAGE2
 
-%include "common.inc"
+%include "common/common.inc"
 
 ; Legacy 8259 programmable interrupt controller (PIC) I/O port numbers.
 PIC1_CMD equ	0x0020

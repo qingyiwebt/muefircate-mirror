@@ -35,8 +35,8 @@
  *	http://refspecs.linuxbase.org/elf/elf.pdf .
  */
 
-#ifndef H_ELF
-#define H_ELF
+#ifndef H_COMMON_ELF
+#define H_COMMON_ELF
 
 #include <inttypes.h>
 

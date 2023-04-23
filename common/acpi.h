@@ -29,11 +29,11 @@
 
 /* ACPI stuff. */
 
-#ifndef H_ACPI
-#define H_ACPI
+#ifndef H_COMMON_ACPI
+#define H_COMMON_ACPI
 
 #include <acpispec/tables.h>
-#include "common.h"
+#include "common/common.h"
 
 /* Flags in acpi_fadt_t::iapc_boot_flags. */
 #define FADT_IAPC_LEGACY_DEVS	(1 <<  0)

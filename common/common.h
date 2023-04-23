@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef H_COMMON
-#define H_COMMON
+#ifndef H_COMMON_COMMON
+#define H_COMMON_COMMON
 
 #include <inttypes.h>
 

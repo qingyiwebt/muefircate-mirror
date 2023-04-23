@@ -33,7 +33,7 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include "bparm.h"
+#include "common/bparm.h"
 
 /* Macros, inline functions, & other definitions (part 1). */
 

@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef H_APIC
-#define H_APIC
+#ifndef H_COMMON_APIC
+#define H_COMMON_APIC
 
 #include <inttypes.h>
 

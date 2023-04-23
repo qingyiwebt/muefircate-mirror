@@ -33,7 +33,7 @@
 #include <efilib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "elf.h"
+#include "common/elf.h"
 
 extern EFI_HANDLE LibImageHandle;
 extern EFI_GUID gEfiLoadedImageProtocolGuid;

@@ -35,11 +35,11 @@
 #include <efilib.h>
 #include <inttypes.h>
 #include <stdbool.h>
-#include "acpi.h"
-#include "bparm.h"
-#include "common.h"
-#include "elf.h"
-#include "pci-common.h"
+#include "common/acpi.h"
+#include "common/bparm.h"
+#include "common/common.h"
+#include "common/elf.h"
+#include "common/pci.h"
 
 /* acpi.c functions. */
 

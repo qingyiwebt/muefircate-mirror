@@ -31,7 +31,7 @@
 #define H_STAGE2_PCI
 
 #include "stage2/stage2.h"
-#include "pci-common.h"
+#include "common/pci.h"
 
 #define PCI_ADDR	0x0cf8
 #define PCI_DATA	0x0cfc
