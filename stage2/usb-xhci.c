@@ -34,11 +34,9 @@
 #include "stage2/stage2.h"
 #include "stage2/pci.h"
 
-#define XHCI_XECP_LEGACY		0x01
-#define XHCI_USBLEGSUP_BIOS_OWNED	(1UL << 16)
-#define XHCI_USBLEGSUP_OS_OWNED		(1UL << 24)
-#define XHCI_USBLEGCTLSTS_SMI_USB	(1UL <<  0)
-#define XHCI_USBLEGCTLSTS_SMI_OS_ENA	(1UL << 13)
+#define XECP_LEGACY		0x01
+#define LEGSUP_BIOS_OWNED	(1UL << 16)
+#define LEGSUP_OS_OWNED		(1UL << 24)
 
 /* XHCI Host Controller Capability Registers. */
 typedef volatile struct __attribute__ ((packed))
@@ -69,8 +67,26 @@ typedef volatile union __attribute__ ((packed))
   } legacy;
 } usb_xhci_xec_t;
 
+/* XHCI Host Controller Operational Registers. */
+typedef volatile struct __attribute__ ((packed))
+{
+  uint32_t USBCMD;			/* USB command */
+  uint32_t USBSTS;			/* USB status */
+  uint32_t PAGESIZE;			/* page size */
+  uint32_t _RsvdZ_0x0c;			/* reserved */
+  uint32_t _RsvdZ_0x10;			/* reserved */
+  uint32_t DNCTRL;			/* device notification control */
+  uint32_t CRCR;			/* command ring control */
+  uint64_t _RsvdZ_0x20;			/* reserved */
+  uint64_t _RsvdZ_0x28;			/* reserved */
+  uint64_t DCBAAP;			/* device context base address array
+					   pointer */
+  uint32_t CONFIG;			/* configure */
+  uint32_t _RsvdZ_0x3c[(0x400 - 0x3c) / sizeof (uint32_t)];  /* reserved */
+} usb_xhci_op_regs_t;
+
 static void
-xhci_start_legacy (uint32_t locn, uint64_t hc_pa, uint32_t hccp1)
+xhci_stop_legacy (uint32_t locn, uint64_t hc_pa, uint32_t hccp1)
 {
   uint64_t pa = hc_pa;
   uint16_t off = (uint16_t) (hccp1 >> 16);
@@ -78,26 +94,26 @@ xhci_start_legacy (uint32_t locn, uint64_t hc_pa, uint32_t hccp1)
   while (off != 0)
     {
       usb_xhci_xec_t *xec;
-      pa += (uint64_t) off *4;
+      pa += (uint64_t) off * 4;
       xec = mem_va_map (pa, sizeof (usb_xhci_xec_t), PTE_CD);
       cap_id = xec->CAPID;
-      if (cap_id == XHCI_XECP_LEGACY)
+      if (cap_id == XECP_LEGACY)
 	{
 	  uint32_t cap1 = xec->legacy.USBLEGSUP,
-	    cap2 = xec->legacy.USBLEGCTLSTS,
-	    new_cap1 = cap1 | XHCI_USBLEGSUP_OS_OWNED,
-	    new_cap2 = cap2 | XHCI_USBLEGCTLSTS_SMI_USB
-			    | XHCI_USBLEGCTLSTS_SMI_OS_ENA;
-	  if (new_cap1 != cap1 || new_cap2 != cap2)
+		   cap2 = xec->legacy.USBLEGCTLSTS,
+		   new_cap1 = (cap1 & ~LEGSUP_BIOS_OWNED) | LEGSUP_OS_OWNED;
+	  cprintf ("  USBLEGCTLSTS: 0x%" PRIx32 "\n"
+		   "  USBLEGSUP @ 0x%" PRIx32 "%08" PRIx32 ": 0x%" PRIx32,
+		   cap2, (uint32_t) (pa >> 32), (uint32_t) pa, cap1);
+	  if (new_cap1 != cap1)
 	    {
-	      cprintf ("  USBLEGCTLSTS: 0x%" PRIx32
-		       " \x1a 0x%" PRIx32 "\n", cap2, new_cap2);
-	      xec->legacy.USBLEGCTLSTS = new_cap2;
-	      cprintf ("  USBLEGSUP @ 0x%" PRIx32 "%08" PRIx32 ": "
-		       "0x%" PRIx32 " \x1a 0x%" PRIx32 "\n",
-		       (uint32_t) (pa >> 32), (uint32_t) pa, cap1, new_cap1);
 	      xec->legacy.USBLEGSUP = new_cap1;
+	      do
+		new_cap1 = xec->legacy.USBLEGSUP;
+	      while ((new_cap1 & LEGSUP_BIOS_OWNED) != 0);
+	      cprintf (" \x1a 0x%" PRIx32, new_cap1);
 	    }
+	  putch ('\n');
 	  mem_va_unmap (xec, sizeof (usb_xhci_xec_t));
 	  return;
 	}
@@ -112,21 +128,27 @@ xhci_start_legacy (uint32_t locn, uint64_t hc_pa, uint32_t hccp1)
 void
 usb_xhci_init_bus (bdat_pci_dev_t * pd)
 {
+  size_t MAP_LEN = 0x100 + sizeof (usb_xhci_op_regs_t);
   uint32_t locn = pd->pci_locn, hccp1;
   usb_xhci_t *hc;
+  usb_xhci_op_regs_t *hcop;
   uint64_t hc_pa;
+  uint8_t cap_len;
   unsigned seg = locn >> 16, bus = (locn >> 8) & 0xff,
 	   dev = (locn >> 3) & 0x1f, fn = locn & 7;
   hc = pci_va_map (locn, 0, sizeof (usb_xhci_t), &hc_pa);
   cprintf ("USB XHCI @ %04x:%02x:%02x.%x  BASE: @0x%" PRIx32 "%08" PRIx32 "\n",
 	   seg, bus, dev, fn, (uint32_t) (hc_pa >> 32), (uint32_t) hc_pa);
   hccp1 = hc->HCCPARAMS1;
+  cap_len = hc->CAPLENGTH;
   cprintf ("  CAPLENGTH: 0x%" PRIx8 "  HCIVERSION: 0x%" PRIx16 "\n"
 	   "  HCSPARAMS: 0x%" PRIx32 " 0x%" PRIx32 " 0x%" PRIx32 "  "
 	   "HCCPARAMS: 0x%" PRIx32 " 0x%" PRIx32 "\n",
-	   hc->CAPLENGTH, hc->HCIVERSION,
+	   cap_len, hc->HCIVERSION,
 	   hc->HCSPARAMS1, hc->HCSPARAMS2, hc->HCSPARAMS3,
 	   hccp1, hc->HCCPARAMS2);
-  xhci_start_legacy (locn, hc_pa, hccp1);
+  xhci_stop_legacy (locn, hc_pa, hccp1);
+  hcop = (usb_xhci_op_regs_t *) ((uint8_t *) hc + cap_len);
+  cprintf ("  USBSTS: 0x%" PRIx32 "\n", hcop->USBSTS);
   mem_va_unmap (hc, sizeof (usb_xhci_t));
 }

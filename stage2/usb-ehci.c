@@ -34,11 +34,9 @@
 #include "stage2/stage2.h"
 #include "stage2/pci.h"
 
-#define EHCI_EECP_LEGACY		0x01
-#define EHCI_USBLEGSUP_BIOS_OWNED	(1UL << 16)
-#define EHCI_USBLEGSUP_OS_OWNED		(1UL << 24)
-#define EHCI_USBLEGCTLSTS_SMI_USB	(1UL <<  0)
-#define EHCI_USBLEGCTLSTS_SMI_OS_ENA	(1UL << 13)
+#define EECP_LEGACY		0x01
+#define LEGSUP_BIOS_OWNED	(1UL << 16)
+#define LEGSUP_OS_OWNED		(1UL << 24)
 
 /* EHCI Host Controller Capability Registers. */
 typedef volatile struct __attribute__ ((packed))
@@ -50,42 +48,30 @@ typedef volatile struct __attribute__ ((packed))
   uint32_t HCCPARAMS;			/* capability parameters */
 } usb_ehci_t;
 
-/* XHCI Host Controller Capability Registers. */
-typedef volatile struct __attribute__ ((packed))
-{
-  uint8_t CAPLENGTH;			/* capability registers length */
-  uint8_t : 8;				/* reserved */
-  uint16_t HCIVERSION;			/* interface version number */
-  /* structural parameters 1, 2, 3 */
-  uint32_t HCSPARAMS1, HCSPARAMS2, HCSPARAMS3;
-  uint32_t HCCPARAMS1;			/* capability parameters 1 */
-  uint32_t DBOFF;			/* doorbell offset */
-  uint32_t RTSOFF;			/* runtime register space offset */
-  uint32_t HCCPARAMS2;			/* capability parameters 2 */
-} usb_xhci_t;
-
 static void
-ehci_start_legacy (uint32_t locn, uint32_t hccp)
+ehci_stop_legacy (uint32_t locn, uint32_t hccp)
 {
   uint8_t off = (uint8_t) (hccp >> 8);
   while (off >= 0x40)
     {
       uint32_t cap1 = in_pci_d (locn, off);
       uint8_t cap_id = (uint8_t) cap1, nxt_off;
-      if (cap_id == EHCI_EECP_LEGACY)
+      if (cap_id == EECP_LEGACY)
 	{
 	  uint32_t cap2 = in_pci_d (locn, off + 4);
-	  uint32_t new_cap1 = cap1 | EHCI_USBLEGSUP_OS_OWNED;
-	  uint32_t new_cap2 = cap2 | EHCI_USBLEGCTLSTS_SMI_USB
-				   | EHCI_USBLEGCTLSTS_SMI_OS_ENA;
-	  if (new_cap1 == cap1 && new_cap2 == cap2)
-	    continue;
-	  cprintf ("  USBLEGCTLSTS: 0x%" PRIx32 " \x1a 0x%" PRIx32,
-		   cap2, new_cap2);
-	  out_pci_d (locn, off + 4, new_cap2);
-	  cprintf ("  USBLEGSUP @ +0x%" PRIx8 ": 0x%" PRIx32
-		   " \x1a 0x%" PRIx32 "\n", off, cap1, new_cap1);
-	  out_pci_d (locn, off, new_cap1);
+	  uint32_t new_cap1 = (cap1 & ~LEGSUP_BIOS_OWNED) | LEGSUP_OS_OWNED;
+	  cprintf ("  USBLEGCTLSTS: 0x%" PRIx32 "\n"
+		   "  USBLEGSUP @ +0x%" PRIx8 ": 0x%" PRIx32,
+		   cap2, off, cap1);
+	  if (new_cap1 != cap1)
+	    {
+	      out_pci_d (locn, off, new_cap1);
+	      do
+		new_cap1 = in_pci_d (locn, off);
+	      while ((new_cap1 & LEGSUP_BIOS_OWNED) != 0);
+	      cprintf (" \x1a 0x%" PRIx32, new_cap1);
+	    }
+	  putch ('\n');
 	  return;
 	}
       nxt_off = (uint8_t) (cap1 >> 8);
@@ -111,6 +97,6 @@ usb_ehci_init_bus (bdat_pci_dev_t * pd)
   cprintf ("  CAPLENGTH: 0x%" PRIx8 "  HCIVERSION: 0x%" PRIx16 "  "
 	   "HCSPARAMS: 0x%" PRIx32 "  HCCPARAMS: 0x%" PRIx32 "\n",
 	   hc->CAPLENGTH, hc->HCIVERSION, hc->HCSPARAMS, hccp);
-  ehci_start_legacy (locn, hccp);
+  ehci_stop_legacy (locn, hccp);
   mem_va_unmap (hc, 0x200);
 }
