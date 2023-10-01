@@ -78,7 +78,7 @@ endif
 STAGE2 = stage2.sys
 LEGACY_MBR = legacy-mbr.bin
 
-default: $(STAGE1) $(STAGE2) hd.img hd.img.zip romdumper.efi
+default: $(STAGE1) hd.img hd.img.zip romdumper.efi
 .PHONY: default
 
 ifneq "" "$(SBSIGN_MOK)"
@@ -109,48 +109,6 @@ romdumper.o: romdumper.c $(LIBEFI)
 stage1/main.o romdumper.o : CPPFLAGS += -DPACKAGE_VERSION='"$(conf_Pkg_ver)"'
 stage2/main.o : CPPFLAGS2 += -DPACKAGE_VERSION='"$(conf_Pkg_ver)"'
 
-stage2/data16.bin: stage2/16.elf
-	objcopy -I elf32-i386 --dump-section .data=$@ $< /dev/null
-
-stage2/text16.bin: stage2/16.elf
-	objcopy -I elf32-i386 --dump-section .text=$@ $< /dev/null
-
-stage2/16.elf: stage2/16/head.o stage2/16/conio16.o stage2/16/do-rm16-call.o \
-	       stage2/16/isr-15.o stage2/16/kb.o stage2/16/tb16.o \
-	       stage2/16/time16.o stage2/16/vecs16.o stage2/16/16.ld
-	$(CC3) $(LDFLAGS3) -o $@ $(^:%.ld=-T %.ld) $(LDLIBS3)
-
-stage2/16/%.o: stage2/16/%.c
-	mkdir -p $(@D)
-	$(CC3) $(CFLAGS3) $(CPPFLAGS3) -c -o $@ $<
-
-stage2/16/%.o: stage2/16/%.asm
-	mkdir -p $(@D)
-	$(AS3) $(ASFLAGS3) $(CPPFLAGS3) -o $@ $<
-
-$(STAGE2): stage2/start.o stage2/clib.o stage2/conio.o stage2/copy-tb.o \
-	   stage2/irq.o stage2/main.o stage2/mem.o stage2/pci.o stage2/rm16.o \
-	   stage2/time.o stage2/usb.o stage2/usb-ehci.o stage2/usb-xhci.o \
-	   stage2/stage2.ld stage2/16.elf
-	$(CC2) $(LDFLAGS2) -o $@ \
-	    $(filter-out %.ld %.elf, $^) \
-	    $(patsubst %.ld,-T %.ld,$(filter %.ld,$^)) \
-	    $(patsubst %.elf,-Xlinker --just-symbols=%.elf,$(filter %.elf,$^))\
-	    $(LDLIBS2)
-
-stage2/%.o: stage2/%.c
-	mkdir -p $(@D)
-	$(CC2) $(CFLAGS2) $(CPPFLAGS2) -c -o $@ $<
-
-# For debugging.
-stage2/%.s: stage2/%.c
-	mkdir -p $(@D)
-	$(CC2) $(CFLAGS2) $(CPPFLAGS2) -S -dA -o $@ $<
-
-stage2/%.o: stage2/%.asm stage2/data16.bin stage2/text16.bin
-	mkdir -p $(@D)
-	$(AS2) $(ASFLAGS2) $(CPPFLAGS2) -o $@ $<
-
 # gnu-efi's Make.defaults has a bit of a bug in its setting of $(GCCVERSION)
 # & $(GCCMINOR): if $(CC) -dumpversion says something like `10-win32' it
 # fails to clip off the `-win32' part.  This later leads to incorrect output
@@ -174,7 +132,7 @@ hd.img.zip: hd.img
 
 # mkdosfs only understands a --offset version starting from version 4.2 (Jan
 # 2021).  For older versions of mkdosfs, we need to use a workaround.
-hd.img: $(STAGE1) $(STAGE2) $(LEGACY_MBR)
+hd.img: $(STAGE1) $(LEGACY_MBR)
 	$(RM) $@.tmp
 	dd if=/dev/zero of=$@.tmp bs=1048576 count=32
 	dd if=$(LEGACY_MBR) of=$@.tmp conv=notrunc
@@ -188,7 +146,7 @@ hd.img: $(STAGE1) $(STAGE2) $(LEGACY_MBR)
 	)
 	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT ::/EFI/biefirc
 	mcopy -i $@.tmp@@32K $< ::/EFI/BOOT/bootx64.efi
-	mcopy -i $@.tmp@@32K $(STAGE2) ::/EFI/biefirc/
+	# mcopy -i $@.tmp@@32K $(STAGE2) ::/EFI/biefirc/
 	mv $@.tmp $@
 
 hd.vdi: hd.img
