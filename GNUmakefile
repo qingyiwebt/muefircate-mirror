@@ -14,9 +14,9 @@ endif
 EFISRCDIR := '$(abspath $(conf_Srcdir))'/efi
 LAISRCDIR := '$(abspath $(conf_Srcdir))'/lai
 LIBEFI = efi/boot.efi
-CFLAGS = -ffreestanding -MMD -mno-red-zone -std=c11 -Wall -Werror -pedantic -O2
+CFLAGS = -pie -fPIC -ffreestanding -nostdlib -MMD -mno-red-zone -std=c11 -O2 \
+	 -Wall -Werror -pedantic
 CFLAGS2 = $(CFLAGS)
-AS2 = nasm
 
 QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
 	    $(QEMUEXTRAFLAGS)
@@ -46,8 +46,12 @@ endif
 	$(MAKE) -C efi -e CC='$(CC)' CFLAGS='$(CFLAGS)' boot.efi
 	cp efi/boot.efi $@
 
-$(LEGACY_MBR): legacy-mbr.asm
-	$(AS2) -f bin -MD $(@:.bin=.d) -o $@ $< 
+$(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
+	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
+	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
+
+%.o: %.S
+	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
 hd.img.zip: hd.img
 	$(RM) $@.tmp

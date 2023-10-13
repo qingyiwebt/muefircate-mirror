@@ -17,6 +17,6 @@ conf_mod app.build c c2 versioning
 conf_c_chk_macro __x86_64__
 conf_c_chk_macro __WIN64__
 conf_c2_chk_macro __x86_64__
-conf_appb_chk_exists lld nasm
+conf_appb_chk_exists lld
 conf_versioning_use_git_date biefircate
 conf_end

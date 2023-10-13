@@ -16,7 +16,7 @@ test:
   before_script:
     - apt-get update -y
     - >
-        apt-get install -y git make gcc-mingw-w64-x86-64 lld musl-dev nasm
+        apt-get install -y git make gcc-mingw-w64-x86-64 lld musl-dev
         dosfstools mtools fdisk qemu-utils zip
   script:
     - ./configure
