@@ -1,9 +1,10 @@
 = Developer notes
 
 :fn-hall-21: footnote:hall-21[https://www.freedos.org/.  Retrieved on 15 August 2021.]
+:fn-hall-21b: footnote:hall-21b[J. Hall et al.  DOS Extender.  FreeDOS Wiki, 2021.  Retrieved on 14 October 2023.  http://wiki.freedos.org/wiki/index.php?title=DOS_Extender&oldid=2362.]
 :fn-uefi-21: footnote:uefi-21[UEFI Forum.  Unified Extensible Firmware Interface (UEFI) Specification: Version 2.9.  March 2021.  https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf.]
 
-  * big fluffy goal: boot and run FreeDOS{fn-hall-21} on a UEFI{fn-uefi-21} PC
+  * big fluffy goal: boot and run FreeDOS{fn-hall-21} — or at least programs that use a DOS extender{fn-hall-21b} — on a UEFI{fn-uefi-21} PC
 
 ---
 
@@ -23,8 +24,6 @@
   * `biefircate` should also properly initialize any option ROMs for PCI devices — PCI firmware spec.{fn-pci-05} says how
   * we assume the PC firmware
   ** implements UEFI{fn-uefi-21}
-  ** has some PCI support
-  ** has a legacy-style PCI option ROM for the VGA device
   ** has some ACPI tables{fn-uefi-21b} which report what features the underlying system has
   *** `biefircate` will likely not support ACPI in its full generality; the spec. is extremely complex
   * some PCs — but not all — allow bootloaders to access the firmware volume protocol;{fn-uefi-20} this can be used to discover some option ROMs
@@ -33,39 +32,36 @@
 
 === Code structure (?)
 
+:fn-coutant-98: footnote:coutant-98[C. Coutant et al. (?)  ELF-64 Object File Format: Version 1.5 Draft 2.  May 1998.  Retrieved on 14 October 2023.  https://uclibc.org/docs/elf-64-gen.pdf.]
 :fn-intel-21: footnote:intel-21[Intel Corporation.  Intel® 64 and IA-32 Architectures Software Developer's Manual: Volume 3A, pp. 2-17, 4-14—4-19.  June 2021.]
+:fn-krinkin-20: footnote:krinkin-20[M. Krinkin.  Loading an ELF image from EFI.  ./ Welcome to the Mike's homepage!, November 2020.  Retrieved on 14 October 2023.  https://krinkinmu.github.io/2020/11/15/loading-elf-image.html.]
 :fn-tis-95: footnote:tis-95[TIS Committee.  Tool Interface Standard (TIS) Executable and Linking Format (ELF) Specification: Version 1.2.  May 1995.  http://refspecs.linuxbase.org/elf/elf.pdf.]
 
   * stage 1 is for stuff that happens before exiting UEFI boot services; stage 2 is for stuff after that
   ** other than the above, there are (currently) no hard and fast rules for delineating the two
-  ** stage 1 passes a pointer to a linked list of boot parameters (see link:bparm.h[`bparm.h`]) to stage 2
-  * stage 2
-  ** currently takes the form of an ELF executable{fn-tis-95}
-  *** 32-bit, but can access 64-bit addr. space via PAE paging{fn-intel-21}
-  ** calling convention used is `-mregparm=3 -mrtd`
-  *** when calling non-variadic function: first few arguments go in `eax`, `edx`, `ecx`; callee pops any stack arguments
-  *** callee must preserve `ebx` (!), `esi`, `edi`, `ebp`
+  * stage 2 is expected to take the form of an ELF-64 executable{fn-coutant-98}{fn-tis-95} for x86-64
+  * for now I merely co-opt Mike Krinkin's simple UEFI → ELF loader{fn-krinkin-20} for use as stage 1; might need to tweak it to pass extra info to stage 2
 
 ---
 
 === Rough to-do list (?!?) for something approaching a "minimum viable product"
 
-:fn-bzt-20: footnote:bzt-20[Bzt et al.  GOP.  OSDev Wiki, 2020.  Retrieved on 22 April 2022.]
+:fn-bzt-20: footnote:bzt-23[Bzt et al.  GOP.  OSDev Wiki, 2023.  Retrieved on 14 October 2023.  https://wiki.osdev.org/index.php?title=GOP&oldid=28290.]
 
   * ☐ Screen output
-  ** ☑ via VGA option ROM, if present
+  ** ☐ via VGA option ROM, if present
   ** ☐ via framebuffer from UEFI bootloader{fn-bzt-20}
-  * ☐ Keyboard input
-  ** ☑ via PS/2 keyboard — partially working
-  ** ☑ via USB keyboard emulating legacy PS/2 keyboard using SMI
-  *** ☑ EHCI — partially working
-  *** ☑ XHCI — implemented, need testing
-  ** ☐ via USB keyboard directly
-  * ☐ Storage drive I/O
   * ☐ Time-keeping — useful-to-have capability for interacting with other devices e.g. keyboard and storage (!)
-  ** ☑ via legacy PIT and/or CMOS RTC
+  ** ☐ via legacy PIT and/or CMOS RTC
   ** ☐ via time stamp counter (`rdtsc`) or APIC timer, on a CPU
   ** ☐ via HPET or ACPI timer, outside CPUs
+  * ☐ Keyboard input
+  ** ☐ via PS/2 keyboard
+  ** ☐ via USB keyboard emulating legacy PS/2 keyboard using SMI
+  *** ☐ EHCI
+  *** ☐ XHCI
+  ** ☐ via USB keyboard directly
+  * ☐ Storage drive I/O
 
 ---
 

@@ -1,29 +1,8 @@
 # Copyright (c) 2020--2023 TK Chia
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-#   * Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer.
-#   * Redistributions in binary form must reproduce the above copyright
-#     notice, this list of conditions and the following disclaimer in the
-#     documentation and/or other materials provided with the distribution.
-#   * Neither the name of the developer(s) nor the names of its
-#     contributors may be used to endorse or promote products derived from
-#     this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-# PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 ifeq "" "$(wildcard config.cache)"
 $(error you must configure this project first!)
@@ -32,95 +11,40 @@ endif
 -include config.cache
 -include $(conf_Lolwutconf_dir)/lolwutconf.mk
 
-GNUEFISRCDIR := '$(abspath $(conf_Srcdir))'/gnu-efi
+EFISRCDIR := '$(abspath $(conf_Srcdir))'/efi
 LAISRCDIR := '$(abspath $(conf_Srcdir))'/lai
-CFLAGS = -pie -fPIC -ffreestanding -O2 -Wall -mno-red-zone \
-	 -fno-stack-protector -MMD
-AS = nasm
-ASFLAGS = -f win64 -MD $(@:.o=.d)
-COMMON_CPPFLAGS =
-CPPFLAGS += -I $(GNUEFISRCDIR)/inc -I $(GNUEFISRCDIR)/protocol \
-	    -I $(GNUEFISRCDIR)/inc/x86_64 \
-	    -I $(LAISRCDIR)/include \
-	    -I $(conf_Srcdir) $(COMMON_CPPFLAGS)
-LDFLAGS += $(CFLAGS) -nostdlib -ffreestanding -Wl,--entry,efi_main \
-	  -Wl,--subsystem,10 -Wl,--strip-all -Wl,-Map=$(@:.efi=.map)
-LIBEFI = gnu-efi/x86_64/lib/libefi.a
-LDLIBS := $(LIBEFI) $(LDLIBS)
-
-CFLAGS2 += -mregparm=3 -mrtd -fno-jump-tables -fno-pic \
-	   -ffreestanding -fbuiltin -O2 -Wall -fno-stack-protector -MMD
+LIBEFI = efi/boot.efi
+CFLAGS = -ffreestanding -MMD -mno-red-zone -std=c11 -Wall -Werror -pedantic -O2
+CFLAGS2 = $(CFLAGS)
 AS2 = nasm
-ASFLAGS2 = -f elf32 -MD $(@:.o=.d)
-CPPFLAGS2 += -I $(LAISRCDIR)/include -I $(conf_Srcdir) $(COMMON_CPPFLAGS)
-LDFLAGS2_ORIG := $(LDFLAGS2)
-LDFLAGS2 += $(CFLAGS2) -static -nostdlib -ffreestanding \
-    -Wl,--strip-all -Wl,-Map=$(basename $@).map -Wl,--build-id=none
-LDLIBS2 =
-
-CC3 = $(patsubst -m32,-m16,$(CC2))
-CFLAGS3 = -m16 $(patsubst -m32,-m16,$(CFLAGS2))
-AS3 = $(AS2)
-ASFLAGS3 = $(ASFLAGS2)
-CPPFLAGS3 = $(CPPFLAGS2)
-LDFLAGS3 = $(LDFLAGS2_ORIG) $(CFLAGS3) -static -nostdlib -ffreestanding \
-    -Wl,--strip-debug -Wl,-Map=$(basename $@).map -Wl,--build-id=none
-LDLIBS3 =
 
 QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
 	    $(QEMUEXTRAFLAGS)
 
 ifneq "" "$(SBSIGN_MOK)"
-STAGE1 = stage1.signed.efi
+STAGE1 = bootx64.signed.efi
 else
-STAGE1 = stage1.efi
+STAGE1 = bootx64.efi
 endif
 STAGE2 = stage2.sys
 LEGACY_MBR = legacy-mbr.bin
 
-default: $(STAGE1) hd.img hd.img.zip romdumper.efi
+default: $(STAGE1) hd.img hd.img.zip
 .PHONY: default
 
 ifneq "" "$(SBSIGN_MOK)"
-stage1.signed.efi: stage1.efi
+bootx64.signed.efi: bootx64.efi
 	sbsign --key $(SBSIGN_MOK:=.key) --cert $(SBSIGN_MOK:=.crt) \
 	       --output $@ $<
 endif
 
-stage1.efi: stage1/main.o stage1/acpi.o stage1/bmem.o stage1/bparm.o \
-	    stage1/conf.o stage1/fv.o stage1/pci.o stage1/run-stage2.o \
-	    stage1/util.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-stage1/%.o: stage1/%.c $(LIBEFI)
-	mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
-
-stage1/%.o: stage1/%.asm $(LIBEFI)
-	mkdir -p $(@D)
-	$(AS) $(ASFLAGS) $(CPPFLAGS) -o $@ $<
-
-romdumper.efi: romdumper.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-romdumper.o: romdumper.c $(LIBEFI)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
-
-stage1/main.o romdumper.o : CPPFLAGS += -DPACKAGE_VERSION='"$(conf_Pkg_ver)"'
-stage2/main.o : CPPFLAGS2 += -DPACKAGE_VERSION='"$(conf_Pkg_ver)"'
-
-# gnu-efi's Make.defaults has a bit of a bug in its setting of $(GCCVERSION)
-# & $(GCCMINOR): if $(CC) -dumpversion says something like `10-win32' it
-# fails to clip off the `-win32' part.  This later leads to incorrect output
-# code.  Work around this here.
-$(LIBEFI):
-	mkdir -p gnu-efi
-	$(MAKE) CROSS_COMPILE=x86_64-w64-mingw32- CFLAGS='$(CFLAGS)' \
-	    GCCVERSION=$(shell $(CC) -dumpversion | cut -f1 -d- | cut -f1 -d.)\
-	    GCCMINOR=$(shell $(CC) -dumpversion | cut -f1 -d- | cut -f2 -d.) \
-	    -C gnu-efi \
-	    -f '$(abspath $(conf_Srcdir))'/gnu-efi/Makefile \
-	    lib inc
+bootx64.efi:
+ifeq "$(conf_Separate_build_dir)" "yes"
+	$(RM) -r efi
+	cp -r $(EFISRCDIR) efi
+endif
+	$(MAKE) -C efi -e CC='$(CC)' CFLAGS='$(CFLAGS)' boot.efi
+	cp efi/boot.efi $@
 
 $(LEGACY_MBR): legacy-mbr.asm
 	$(AS2) -f bin -MD $(@:.bin=.d) -o $@ $< 
@@ -162,7 +86,7 @@ endif
 
 clean:
 	set -e; \
-	for d in . stage1 stage2 stage2/16; do \
+	for d in . stage2; do \
 		if test -d "$$d"; then \
 			(cd "$$d" && \
 			 $(RM) *.[ods] *.so *.efi *.img *.img.zip *.vdi \
@@ -170,9 +94,9 @@ clean:
 		fi; \
 	done
 ifeq "$(conf_Separate_build_dir)" "yes"
-	$(RM) -r stage1 stage2 gnu-efi
+	$(RM) -r efi
 else
-	$(MAKE) -C gnu-efi clean
+	$(MAKE) -C efi clean
 endif
 .PHONY: clean
 
@@ -180,4 +104,4 @@ run-qemu: hd.img
 	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda $< $(QEMUFLAGS)
 .PHONY: run-qemu
 
--include *.d stage1/*.d stage2/*.d stage2/16/*.d
+-include *.d stage2/*.d
