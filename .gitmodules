@@ -10,6 +10,6 @@
 [submodule "nanoprintf"]
 	path = nanoprintf
 	url = https://github.com/charlesnicholson/nanoprintf.git
-[submodule "efi"]
-	path = efi
-	url = https://github.com/krinkinmu/efi.git
+[submodule "efi.krinkinmu"]
+	path = efi.krinkinmu
+	url = https://gitlab.com/tkchia/efi.krinkinmu.git

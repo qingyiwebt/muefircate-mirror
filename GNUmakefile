@@ -11,46 +11,57 @@ endif
 -include config.cache
 -include $(conf_Lolwutconf_dir)/lolwutconf.mk
 
-EFISRCDIR := '$(abspath $(conf_Srcdir))'/efi
-LAISRCDIR := '$(abspath $(conf_Srcdir))'/lai
-LIBEFI = efi/boot.efi
-CFLAGS = -pie -fPIC -ffreestanding -nostdlib -MMD -mno-red-zone -std=c11 -O2 \
-	 -Wall -Werror -pedantic
-CFLAGS2 = $(CFLAGS)
+EFISRCDIR := $(abspath $(conf_Srcdir))/efi.krinkinmu
+LAISRCDIR := $(abspath $(conf_Srcdir))/lai
+CFLAGS_COMMON = -pie -fPIC -ffreestanding -static -nostdlib -MMD \
+		-mno-red-zone -O2 -std=c11 -Wall -Werror -pedantic
+CFLAGS = $(CFLAGS_COMMON)
+CFLAGS2 = $(CFLAGS_COMMON)
+LDFLAGS2 += -Wl,--hash-style=sysv
 
 QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
 	    $(QEMUEXTRAFLAGS)
 
 ifneq "" "$(SBSIGN_MOK)"
-STAGE1 = bootx64.signed.efi
+STAGE1 = $(STAGE1_SIGNED)
 else
-STAGE1 = bootx64.efi
+STAGE1 = $(STAGE1_UNSIGNED)
 endif
+STAGE1_SIGNED = bootx64.signed.efi
+STAGE1_UNSIGNED = bootx64.efi
+STAGE1_CONFIG = config.txt
 STAGE2 = stage2.sys
+STAGE2_BINDIR = /EFI/biefirc
 LEGACY_MBR = legacy-mbr.bin
 
-default: $(STAGE1) hd.img hd.img.zip
+default: $(STAGE1) $(STAGE1_CONFIG) $(STAGE2) hd.img hd.img.zip
 .PHONY: default
 
 ifneq "" "$(SBSIGN_MOK)"
-bootx64.signed.efi: bootx64.efi
+$(STAGE1_SIGNED): $(STAGE1_UNSIGNED)
 	sbsign --key $(SBSIGN_MOK:=.key) --cert $(SBSIGN_MOK:=.crt) \
 	       --output $@ $<
 endif
 
-bootx64.efi:
-ifeq "$(conf_Separate_build_dir)" "yes"
-	$(RM) -r efi
-	cp -r $(EFISRCDIR) efi
-endif
-	$(MAKE) -C efi -e CC='$(CC)' CFLAGS='$(CFLAGS)' boot.efi
-	cp efi/boot.efi $@
+$(STAGE1_UNSIGNED): $(wildcard $(EFISRCDIR)/* $(EFISRCDIR)/*/*)
+	$(RM) -r efi.build
+	cp -r $(EFISRCDIR) efi.build
+	$(MAKE) -C efi.build -e CC='$(CC)' CFLAGS='$(CFLAGS)' boot.efi
+	cp efi.build/boot.efi $@
+
+$(STAGE1_CONFIG):
+	echo 'kernel: $(subst /,\,$(STAGE2_BINDIR))\$(STAGE2)' >$@
+
+$(STAGE2): stage2/start.o stage2/stage2.ld
+	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
+	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
 $(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
 %.o: %.S
+	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
 hd.img.zip: hd.img
@@ -58,9 +69,9 @@ hd.img.zip: hd.img
 	zip -9 $@.tmp $^
 	mv $@.tmp $@
 
-# mkdosfs only understands a --offset version starting from version 4.2 (Jan
+# mkdosfs only understands a --offset option starting from version 4.2 (Jan
 # 2021).  For older versions of mkdosfs, we need to use a workaround.
-hd.img: $(STAGE1) $(LEGACY_MBR)
+hd.img: $(STAGE1) $(STAGE1_CONFIG) $(STAGE2) $(LEGACY_MBR)
 	$(RM) $@.tmp
 	dd if=/dev/zero of=$@.tmp bs=1048576 count=32
 	dd if=$(LEGACY_MBR) of=$@.tmp conv=notrunc
@@ -72,9 +83,10 @@ hd.img: $(STAGE1) $(LEGACY_MBR)
 				     conv=notrunc && \
 	    $(RM) $@.2.tmp \
 	)
-	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT ::/EFI/biefirc
+	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT ::$(STAGE2_BINDIR)
 	mcopy -i $@.tmp@@32K $< ::/EFI/BOOT/bootx64.efi
-	# mcopy -i $@.tmp@@32K $(STAGE2) ::/EFI/biefirc/
+	mcopy -i $@.tmp@@32K $(STAGE1_CONFIG) ::/EFI/BOOT/
+	mcopy -i $@.tmp@@32K $(STAGE2) ::$(STAGE2_BINDIR)
 	mv $@.tmp $@
 
 hd.vdi: hd.img
@@ -89,6 +101,7 @@ endif
 .PHONY: distclean
 
 clean:
+	$(RM) -r $(STAGE1_CONFIG) efi.build
 	set -e; \
 	for d in . stage2; do \
 		if test -d "$$d"; then \
