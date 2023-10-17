@@ -60,6 +60,10 @@ $(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
+%.o: %.c
+	mkdir -p $(@D)
+	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
+
 %.o: %.S
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
