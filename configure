@@ -8,11 +8,11 @@
 set -e
 us="`dirname "$0"`"
 if test \! -e "$us"/lolwutconf/configure.inc; then
-	git submodule update --init
+  git submodule update --init
 fi
 . "$us"/lolwutconf/configure.inc
 conf_begin --host=x86_64-w64-mingw32 --host-exec=: \
-	   --host2=x86_64-linux-musl ${1+"$@"}
+	   --host2=x86_64-linux-gnu ${1+"$@"}
 conf_mod app.build c c2 versioning
 conf_c_chk_macro __x86_64__
 conf_c_chk_macro __WIN64__
@@ -20,3 +20,9 @@ conf_c2_chk_macro __x86_64__
 conf_appb_chk_exists lld
 conf_versioning_use_git_date biefircate
 conf_end
+rm -rf picolibc.build
+mkdir picolibc.build picolibc.build/staging
+"$conf_Srcdir"/picolibc/scripts/do-x86_64-configure \
+  -Dprefix="`pwd`"/picolibc.build/staging -Dspecsdir=lib \
+  -Dformat-default=long-long picolibc.build
+cd ..

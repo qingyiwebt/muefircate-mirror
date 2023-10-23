@@ -16,8 +16,10 @@ LAISRCDIR := $(abspath $(conf_Srcdir))/lai
 CFLAGS_COMMON = -pie -fPIC -ffreestanding -static -nostdlib -MMD \
 		-mno-red-zone -O2 -std=c11 -Wall -Werror -pedantic
 CFLAGS = $(CFLAGS_COMMON)
-CFLAGS2 = $(CFLAGS_COMMON)
+CFLAGS2 = $(CFLAGS_COMMON) -nostdinc -I $(STAGE2_LIBC_PREFIX)/include
 LDFLAGS2 += -Wl,--hash-style=sysv
+NINJA = ninja
+NINJAFLAGS =
 
 QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
 	    $(QEMUEXTRAFLAGS)
@@ -32,6 +34,8 @@ STAGE1_UNSIGNED = bootx64.efi
 STAGE1_CONFIG = config.txt
 STAGE2 = stage2.sys
 STAGE2_BINDIR = /EFI/biefirc
+STAGE2_LIBC_PREFIX = picolibc.build/staging/picolibc/x86_64-linux-gnu
+STAGE2_LIBC = $(STAGE2_LIBC_PREFIX)/lib/libc.a
 LEGACY_MBR = legacy-mbr.bin
 
 default: $(STAGE1) $(STAGE1_CONFIG) $(STAGE2) hd.img hd.img.zip
@@ -52,7 +56,7 @@ $(STAGE1_UNSIGNED): $(wildcard $(EFISRCDIR)/* $(EFISRCDIR)/*/*)
 $(STAGE1_CONFIG):
 	echo 'kernel: $(subst /,\,$(STAGE2_BINDIR))\$(STAGE2)' >$@
 
-$(STAGE2): stage2/start.o stage2/stage2.ld
+$(STAGE2): stage2/start.o stage2/stage2.ld $(STAGE2_LIBC)
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
@@ -60,13 +64,17 @@ $(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
-%.o: %.c
+%.o: %.c $(STAGE2_LIBC)
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
-%.o: %.S
+%.o: %.S $(STAGE2_LIBC)
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
+
+$(STAGE2_LIBC):
+	$(NINJA) $(NINJAFLAGS) -C picolibc.build
+	$(NINJA) $(NINJAFLAGS) -C picolibc.build install
 
 hd.img.zip: hd.img
 	$(RM) $@.tmp

@@ -52,12 +52,20 @@ _start:
 	test	$(0x800 - 1), %bx
 	jnz	.pml4
 	mov	%rbp, %cr3		/* reload %cr3 to flush TLBs */
-	mov	%cr0, %rax		/* set %cr0.WP (again) */
-	or	$CR0_WP, %rax
-	mov	%rax, %cr0
 	lea	.cont(%rip), %rax	/* jump to high virtual memory */
-	movabs	$BANE, %rcx
-	add	%rcx, %rax
+	movabs	$BANE, %rbx
+	add	%rbx, %rax
 	jmp	*%rax
 .cont:
+	/* Continue the boot. */
+	add	%rbx, %rsp		/* adjust pointers from bootloader */
+	add	%rbx, %rdi		/* to point to high space */
+	add	%rbx, %rdx
+	push	%r8			/* save stage1 parameters (on stack) */
+	push	%rcx
+	push	%rdx
+	push	%rsi
+	push	%rdi
+	mov	%rsp, %rdi
+	and	$-0x10, %rsp
 	jmp	.

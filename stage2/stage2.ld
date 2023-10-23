@@ -23,7 +23,8 @@ SECTIONS
 
   HIDDEN (_PGSZ = CONSTANT (COMMONPAGESIZE));
 
-  .text 0x1000000 + SIZEOF_HEADERS :
+  . = ALIGN (0x1000000 + SIZEOF_HEADERS, 0x10);
+  .text . :
   {
     *(.text .stub .text.* .gnu.linkonce.t.*)
     *(.gnu.warning)
@@ -48,6 +49,7 @@ SECTIONS
 
   /DISCARD/ :
   {
-    *(.note.GNU-stack .gnu_* .gnu.* .stab* .debug_* .eh_frame .comment)
+    *(.note.GNU-stack .gnu_* .gnu.* .note.gnu.build-id
+      .stab* .debug_* .eh_frame .comment)
   }
 }
