@@ -14,8 +14,16 @@ fi
 conf_begin --host=x86_64-w64-mingw32 --host-exec=: \
 	   --host2=x86_64-linux-gnu ${1+"$@"}
 conf_mod app.build c c2 versioning
+conf_c_probe_opt_fcf_protection_none
+if test yes = "$conf_Have_c_opt_fcf_protection_none"; then
+  CFLAGS="$CFLAGS -fcf-protection=none"
+fi
 conf_c_chk_macro __x86_64__
 conf_c_chk_macro __WIN64__
+conf_c2_probe_opt_fcf_protection_none
+if test yes = "$conf_Have_c2_opt_fcf_protection_none"; then
+  CFLAGS2="$CFLAGS2 -fcf-protection=none"
+fi
 conf_c2_chk_macro __x86_64__
 conf_appb_chk_exists lld
 conf_versioning_use_git_date biefircate
