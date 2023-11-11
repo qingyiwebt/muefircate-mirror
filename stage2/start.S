@@ -40,7 +40,7 @@ _start:
 	add	$0x18, %rdi		/* in the reserved list */
 	dec	%rsi
 	jnz	.reserve
-	lea	(%rsp, %rcx), %rdi	/* point %rdi to the stage1 stuff */
+	lea	(%rsp, %rcx), %r12	/* point %r12 to the stage1 stuff */
 	and	$-0x10, %sp		/* realign %rsp */
 	/*
 	 * Copy the pre-existing identity mappings from [0, 0x7fff'ffff'ffff]
@@ -90,5 +90,10 @@ _start:
 	test	$(0x800 - 1), %bx
 	jnz	.pml4.2
 	mov	%rbp, %cr3		/* flush TLBs again */
-	call	_preinit_cons
+	/*
+	 * Run early initialization routines to set up the final virtual
+	 * memory mapping.
+	 */
+	mov	%r12, %rdi
+	call	__early_init_cons
 	jmp	.

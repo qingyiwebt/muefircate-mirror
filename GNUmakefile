@@ -15,16 +15,16 @@ EFISRCDIR := $(abspath $(conf_Srcdir))/efi.krinkinmu
 LAISRCDIR := $(abspath $(conf_Srcdir))/lai
 CFLAGS_COMMON = -ffreestanding -static -nostdlib -MMD \
 		-mno-red-zone -O2 -std=c11 -Wall -Werror -pedantic
-CFLAGS = $(CFLAGS_COMMON) -fPIE
+CFLAGS += $(CFLAGS_COMMON) -fPIE
 CC2_GCC_INCLUDE := $(patsubst %,-isystem %, \
 		     $(wildcard \
 		       $(shell $(CC2) $(CFLAGS_COMMON) \
 				      -print-file-name=include-fixed) \
 		       $(shell $(CC2) $(CFLAGS_COMMON) \
 				      -print-file-name=include)))
-CFLAGS2 = $(CFLAGS_COMMON) -nostdinc $(CC2_GCC_INCLUDE) \
-			   -isystem $(STAGE2_LIBC_PREFIX)/include
-LDFLAGS2 += -Wl,--hash-style=sysv
+CFLAGS2 += $(CFLAGS_COMMON) -nostdinc $(CC2_GCC_INCLUDE) \
+			    -isystem $(STAGE2_LIBC_PREFIX)/include
+LDFLAGS2 += -static-pie -s -Wl,--hash-style=sysv,-Map=$(@:=.map)
 NINJA = ninja
 NINJAFLAGS =
 
@@ -63,8 +63,8 @@ $(STAGE1_UNSIGNED): $(wildcard $(EFISRCDIR)/* $(EFISRCDIR)/*/*)
 $(STAGE1_CONFIG):
 	echo 'kernel: $(subst /,\,$(STAGE2_BINDIR))\$(STAGE2)' >$@
 
-$(STAGE2): stage2/start.o stage2/cons.preinit.o stage2/cons-font-default.o \
-	   stage2/stage2.ld $(STAGE2_LIBC)
+$(STAGE2): stage2/start.o stage2/cons.early.o stage2/cons-font-default.o \
+	   stage2/cons-klog.early.o stage2/stage2.ld $(STAGE2_LIBC)
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
@@ -72,7 +72,7 @@ $(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
-%.preinit.o: %.preinit.c $(STAGE2_LIBC)
+%.early.o: %.early.c $(STAGE2_LIBC)
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -fPIE -c -o $@ $<
 

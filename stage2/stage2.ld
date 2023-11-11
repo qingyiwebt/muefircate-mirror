@@ -16,6 +16,7 @@ PHDRS
 {
   text PT_LOAD FILEHDR PHDRS;
   data PT_LOAD;
+  bss PT_LOAD;
 }
 
 SECTIONS
@@ -41,11 +42,14 @@ SECTIONS
     *(.data .data.* .gnu.linkonce.d.*)
     . = ALIGN (0x10);
     PROVIDE (_edata = .);
+  } :data
 
+  .bss . (NOLOAD) :
+  {
     *(.bss .bss.* .gnu.linkonce.b.*)
     *(COMMON)
     PROVIDE (_end = .);
-  } :data
+  } :bss
 
   /DISCARD/ :
   {

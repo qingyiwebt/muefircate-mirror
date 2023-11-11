@@ -18,7 +18,7 @@
 # include <stddef.h>
 # include <stdint.h>
 static inline void *
-_early_map_memory (uintptr_t __where, size_t __length)
+__early_map_memory (uintptr_t __where, size_t __length)
 {
   return (void *) (BANE + __where);
 }

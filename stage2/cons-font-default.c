@@ -13,7 +13,7 @@
  * + xorg.freedesktop.org/releases/individual/font/font-misc-misc-1.1.1.tar.bz2
  */
 #include <inttypes.h>
-const uint8_t _cons_font_default_direct[95][13] = {
+const uint8_t __cons_font_default_direct[95][13] = {
   [0] = { /* 32 */
     0x00, /* ........ */
     0x00, /* ........ */
