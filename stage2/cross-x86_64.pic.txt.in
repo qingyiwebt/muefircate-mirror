@@ -1,0 +1,27 @@
+# Copyright (c) 2023 TK Chia
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# This script produces a Meson cross-compilation definition file
+# (https://mesonbuild.com/Machine-files.html) which overrides some of the
+# toolchain settings in picolibc's cross file.
+
+cat <<'PART1'
+[binaries]
+c = [
+      'ccache',
+PART1
+
+set -- $CC2 $CPPFLAGS2 $CFLAGS2 $LDFLAGS2
+for arg in "$@"; do
+  echo "$arg" | sed -e 's:\\:\\\\:g' -e "s:':\\\\:g" \
+		    -e "s:^:      ':" -e "s:\$:',:"
+done
+
+cat <<'PART2'
+      '-fPIE',
+      '-nostdlib'
+    ]
+PART2

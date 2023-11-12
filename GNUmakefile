@@ -22,7 +22,7 @@ CC2_GCC_INCLUDE := $(patsubst %,-isystem %, \
 				      -print-file-name=include-fixed) \
 		       $(shell $(CC2) $(CFLAGS_COMMON) \
 				      -print-file-name=include)))
-CFLAGS2 += $(CFLAGS_COMMON) -nostdinc $(CC2_GCC_INCLUDE) \
+CFLAGS2 += $(CFLAGS_COMMON) -fPIE -nostdinc $(CC2_GCC_INCLUDE) \
 			    -isystem $(STAGE2_LIBC_PREFIX)/include
 LDFLAGS2 += -static-pie -s -Wl,--hash-style=sysv,-Map=$(@:=.map)
 NINJA = ninja
@@ -74,7 +74,7 @@ $(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
 
 %.early.o: %.early.c $(STAGE2_LIBC)
 	mkdir -p $(@D)
-	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -fPIE -c -o $@ $<
+	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
 %.o: %.c $(STAGE2_LIBC)
 	mkdir -p $(@D)
@@ -118,7 +118,7 @@ hd.vdi: hd.img
 	mv $@.tmp $@
 
 distclean: clean
-	$(RM) config.cache
+	$(RM) config.cache stage2/cross-x86_64.pic.txt
 ifeq "$(conf_Separate_build_dir)" "yes"
 	-$(RM) GNUmakefile
 endif

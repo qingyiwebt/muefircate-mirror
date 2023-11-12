@@ -17,7 +17,7 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y git make gcc-mingw-w64-x86-64 lld musl-dev \
-                                  dosfstools mtools meson ninja-build \
+                                  dosfstools mtools ccache meson ninja-build \
                                   fdisk qemu-utils zip
       - name: build
         run: |
