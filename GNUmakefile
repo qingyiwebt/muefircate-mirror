@@ -23,7 +23,7 @@ CC2_GCC_INCLUDE := $(patsubst %,-isystem %, \
 		       $(shell $(CC2) $(CFLAGS_COMMON) \
 				      -print-file-name=include)))
 CFLAGS2 += $(CFLAGS_COMMON) -fPIE -nostdinc $(CC2_GCC_INCLUDE) \
-			    -isystem $(STAGE2_LIBC_PREFIX)/include
+			    -isystem $(MACRON2_LIBC_PREFIX)/include
 LDFLAGS2 += -static-pie -s -Wl,--hash-style=sysv,-Map=$(@:=.map)
 NINJA = ninja
 NINJAFLAGS =
@@ -32,39 +32,42 @@ QEMUFLAGS = -m 224m -serial stdio -usb -device usb-ehci -device qemu-xhci \
 	    $(QEMUEXTRAFLAGS)
 
 ifneq "" "$(SBSIGN_MOK)"
-STAGE1 = $(STAGE1_SIGNED)
+MUON = $(MUON_SIGNED)
+MACRON1 = $(MACRON1_SIGNED)
 else
-STAGE1 = $(STAGE1_UNSIGNED)
+MUON = $(MUON_UNSIGNED)
+MACRON1 = $(MACRON1_UNSIGNED)
 endif
-STAGE1_SIGNED = bootx64.signed.efi
-STAGE1_UNSIGNED = bootx64.efi
-STAGE1_CONFIG = config.txt
-STAGE2 = stage2.sys
-STAGE2_BINDIR = /EFI/biefirc
-STAGE2_LIBC_PREFIX = picolibc.build/staging/picolibc/x86_64-linux-gnu
-STAGE2_LIBC = $(STAGE2_LIBC_PREFIX)/lib/libc.a
+MUON_SIGNED = muon.signed.efi
+MACRON1_SIGNED = macron1.signed.efi
+MACRON1_UNSIGNED = macron1.efi
+MACRON1_CONFIG = config.txt
+MACRON2 = macron2.sys
+MACRON2_BINDIR = /EFI/biefirc
+MACRON2_LIBC_PREFIX = picolibc.build/staging/picolibc/x86_64-linux-gnu
+MACRON2_LIBC = $(MACRON2_LIBC_PREFIX)/lib/libc.a
 LEGACY_MBR = legacy-mbr.bin
 
-default: $(STAGE1) $(STAGE1_CONFIG) $(STAGE2) hd.img hd.img.zip
+default: $(MACRON1) $(MACRON1_CONFIG) $(MACRON2) macron.img macron.img.zip
 .PHONY: default
 
 ifneq "" "$(SBSIGN_MOK)"
-$(STAGE1_SIGNED): $(STAGE1_UNSIGNED)
+%.signed.efi: %.efi
 	sbsign --key $(SBSIGN_MOK:=.key) --cert $(SBSIGN_MOK:=.crt) \
 	       --output $@ $<
 endif
 
-$(STAGE1_UNSIGNED): $(wildcard $(EFISRCDIR)/* $(EFISRCDIR)/*/*)
+$(MACRON1_UNSIGNED): $(wildcard $(EFISRCDIR)/* $(EFISRCDIR)/*/*)
 	$(RM) -r efi.build
 	cp -r $(EFISRCDIR) efi.build
 	$(MAKE) -C efi.build -e CC='$(CC)' CFLAGS='$(CFLAGS)' boot.efi
 	cp efi.build/boot.efi $@
 
-$(STAGE1_CONFIG):
-	echo 'kernel: $(subst /,\,$(STAGE2_BINDIR))\$(STAGE2)' >$@
+$(MACRON1_CONFIG):
+	echo 'kernel: $(subst /,\,$(MACRON2_BINDIR))\$(MACRON2)' >$@
 
-$(STAGE2): stage2/start.o stage2/cons.early.o stage2/cons-font-default.o \
-	   stage2/cons-klog.early.o stage2/stage2.ld $(STAGE2_LIBC)
+$(MACRON2): macron2/start.o macron2/cons.early.o macron2/cons-font-default.o \
+	    macron2/cons-klog.early.o macron2/macron2.ld $(MACRON2_LIBC)
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
@@ -72,30 +75,30 @@ $(LEGACY_MBR): legacy-mbr.o legacy-mbr.ld
 	$(CC2) $(CFLAGS2) $(LDFLAGS2) $(patsubst %,-T %,$(filter %.ld,$^)) \
 	       -o $@ $(filter-out %.ld,$^) $(LDLIBS2)
 
-%.early.o: %.early.c $(STAGE2_LIBC)
+%.early.o: %.early.c $(MACRON2_LIBC)
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
-%.o: %.c $(STAGE2_LIBC)
+%.o: %.c $(MACRON2_LIBC)
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
-%.o: %.S $(STAGE2_LIBC)
+%.o: %.S $(MACRON2_LIBC)
 	mkdir -p $(@D)
 	$(CC2) $(CPPFLAGS2) $(CFLAGS2) -c -o $@ $<
 
-$(STAGE2_LIBC):
+$(MACRON2_LIBC):
 	$(NINJA) $(NINJAFLAGS) -C picolibc.build
 	$(NINJA) $(NINJAFLAGS) -C picolibc.build install
 
-hd.img.zip: hd.img
+macron.img.zip: macron.img
 	$(RM) $@.tmp
 	zip -9 $@.tmp $^
 	mv $@.tmp $@
 
 # mkdosfs only understands a --offset option starting from version 4.2 (Jan
 # 2021).  For older versions of mkdosfs, we need to use a workaround.
-hd.img: $(STAGE1) $(STAGE1_CONFIG) $(STAGE2) $(LEGACY_MBR)
+macron.img: $(MACRON1) $(MACRON1_CONFIG) $(MACRON2) $(LEGACY_MBR)
 	$(RM) $@.tmp
 	dd if=/dev/zero of=$@.tmp bs=1048576 count=32
 	dd if=$(LEGACY_MBR) of=$@.tmp conv=notrunc
@@ -107,27 +110,27 @@ hd.img: $(STAGE1) $(STAGE1_CONFIG) $(STAGE2) $(LEGACY_MBR)
 				     conv=notrunc && \
 	    $(RM) $@.2.tmp \
 	)
-	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT ::$(STAGE2_BINDIR)
+	mmd -i $@.tmp@@32K ::/EFI ::/EFI/BOOT ::$(MACRON2_BINDIR)
 	mcopy -i $@.tmp@@32K $< ::/EFI/BOOT/bootx64.efi
-	mcopy -i $@.tmp@@32K $(STAGE1_CONFIG) ::/EFI/BOOT/
-	mcopy -i $@.tmp@@32K $(STAGE2) ::$(STAGE2_BINDIR)
+	mcopy -i $@.tmp@@32K $(MACRON1_CONFIG) ::/EFI/BOOT/
+	mcopy -i $@.tmp@@32K $(MACRON2) ::$(MACRON2_BINDIR)
 	mv $@.tmp $@
 
-hd.vdi: hd.img
+macron.vdi: macron.img
 	qemu-img convert $< -O vdi $@.tmp
 	mv $@.tmp $@
 
 distclean: clean
-	$(RM) config.cache stage2/cross-x86_64.pic.txt
+	$(RM) config.cache macron2/cross-x86_64.pic.txt
 ifeq "$(conf_Separate_build_dir)" "yes"
 	-$(RM) GNUmakefile
 endif
 .PHONY: distclean
 
 clean:
-	$(RM) -r $(STAGE1_CONFIG) efi.build
+	$(RM) -r $(MACRON1_CONFIG) efi.build
 	set -e; \
-	for d in . stage2; do \
+	for d in . macron2; do \
 		if test -d "$$d"; then \
 			(cd "$$d" && \
 			 $(RM) *.[ods] *.so *.efi *.img *.img.zip *.vdi \
@@ -141,8 +144,8 @@ else
 endif
 .PHONY: clean
 
-run-qemu: hd.img
+run-macron run-macron-qemu: macron.img
 	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -hda $< $(QEMUFLAGS)
-.PHONY: run-qemu
+.PHONY: run-macron run-macron-qemu
 
--include *.d stage2/*.d
+-include *.d muon/*.d macron2/*.d

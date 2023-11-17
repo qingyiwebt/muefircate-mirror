@@ -1,4 +1,4 @@
-# biᴇꜰɪrcate
+# μuᴇꜰɪrcate
 
 _very experimental_ • _some [developer notes](NOTES.asciidoc) available_
 

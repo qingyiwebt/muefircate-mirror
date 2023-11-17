@@ -29,8 +29,8 @@
  * @internal Definitions for interfacing with the stage 1 bootloader.
  */
 
-#ifndef _H_STAGE2_STAGE1
-#define _H_STAGE2_STAGE1
+#ifndef _H_MACRON2_STAGE1
+#define _H_MACRON2_STAGE1
 
 #include <stddef.h>
 #include <stdint.h>
