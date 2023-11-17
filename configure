@@ -29,12 +29,11 @@ conf_appb_chk_exists lld ccache
 conf_versioning_use_git_date biefircate
 conf_end
 export CC2 CPPFLAGS2 CFLAGS2 LDFLAGS2
-mkdir -p macron2
-"$conf_Srcdir"/macron2/cross-x86_64.pic.txt.in >macron2/cross-x86_64.pic.txt
+"$conf_Srcdir"/cross-x86_64.pic.txt.in >cross-x86_64.pic.txt
 rm -rf picolibc.build
 mkdir picolibc.build picolibc.build/staging
 "$conf_Srcdir"/picolibc/scripts/do-x86_64-configure \
-  --cross-file=macron2/cross-x86_64.pic.txt \
+  --cross-file=cross-x86_64.pic.txt \
   -Dprefix="`pwd`"/picolibc.build/staging -Dspecsdir=lib \
   -Dformat-default=long-long -Dpicocrt=false \
   -Dnewlib-mb=true -Dnewlib-iconv-encodings=utf_8,iso_8859_1,cp850 \
