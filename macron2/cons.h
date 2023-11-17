@@ -16,8 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _H_STAGE2_CONS
-#define _H_STAGE2_CONS
+#ifndef _H_MACRON2_CONS
+#define _H_MACRON2_CONS
 
 #include <limits.h>
 #include <stdint.h>

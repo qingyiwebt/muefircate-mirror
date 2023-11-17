@@ -23,5 +23,5 @@ test:
     - make
   artifacts:
     paths:
-      - bootx64.efi
-      - hd.img.zip
+      - macron1.efi
+      - macron.img.zip

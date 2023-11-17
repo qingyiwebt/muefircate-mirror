@@ -6,8 +6,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#ifndef _H_STAGE2_PC
-#define _H_STAGE2_PC
+#ifndef _H_MACRON2_PC
+#define _H_MACRON2_PC
 
 #define CR0_WP		(1 << 16)
 #define CR4_VA57	(1 << 12)

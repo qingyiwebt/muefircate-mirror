@@ -1,32 +1,21 @@
+// Copyright (c) 2021--2023 TK Chia
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 = Developer notes
 
-:fn-hall-21: footnote:hall-21[https://www.freedos.org/.  Retrieved on 15 August 2021.]
-:fn-hall-21b: footnote:hall-21b[J. Hall et al.  DOS Extender.  FreeDOS Wiki, 2021.  Retrieved on 14 October 2023.  http://wiki.freedos.org/wiki/index.php?title=DOS_Extender&oldid=2362.]
+:fn-hall-21: footnote:hall-21[J. Hall et al.  DOS Extender.  FreeDOS Wiki, 2021.  Retrieved on 14 October 2023.  http://wiki.freedos.org/wiki/index.php?title=DOS_Extender&oldid=2362.]
+:fn-hall-21b: footnote:hall-21b[https://www.freedos.org/.  Retrieved on 15 August 2021.]
+:fn-kadziolka-23: footnote:kadziolka-23[https://github.com/meithecatte/miniforth.  Retrieved on 17 November 2023.]
 :fn-uefi-21: footnote:uefi-21[UEFI Forum.  Unified Extensible Firmware Interface (UEFI) Specification: Version 2.9.  March 2021.  https://uefi.org/sites/default/files/resources/UEFI_Spec_2_9_2021_03_18.pdf.]
 
-  * big fluffy goal: boot and run FreeDOS{fn-hall-21} — or at least programs that use a DOS extender{fn-hall-21b} — on a UEFI{fn-uefi-21} PC
-
----
-
-=== Relevant standards (and "standards")
-
-:fn-brown-00: footnote:brown-00[Brown, Ralf.  The x86 Interrupt List.  16 July 2000.  http://www.cs.cmu.edu/~ralf/files.html.]
-:fn-pci-05: footnote:pci-05[PCI-SIG.  PCI Firmware Specification: Revision 3.0.  June 2005.]
-:fn-uefi-20: footnote:uefi-20[UEFI Forum.  UEFI Platform Initialization (PI) Specification: Version 1.7 Errata A.  April 2020.  https://uefi.org/sites/default/files/resources/PI_Spec_1_7_A_final_May1.pdf.]
-:fn-uefi-21b: footnote:uefi-20b[UEFI Forum.  Advanced Configuration and Power Interface (ACPI) Specification: Version 6.4.  January 2021.  https://uefi.org/sites/default/files/resources/ACPI_Spec_6_4_Jan22.pdf.]
-
-  * the hope is that `biefircate` can implement at least the BIOS interrupts and parts of the BIOS data area described in RBIL{fn-brown-00}
-  ** intrs. `0x00`—`0x1f` (incl. `0x08`—`0x0f` for IRQs 0—7)
-  ** intrs. `0x70`—`0x77` for IRQs 8—15
-  ** the BIOS data area `0x40:0`—`0x50:0`
-  ** maybe also intrs. `0x40` (relocated diskette I/O) and `0x42` (relocated video output services)
-  ** no need for `biefircate` to implement MS-DOS intrs. (`0x20`—`0x33` etc.)
-  * `biefircate` should also properly initialize any option ROMs for PCI devices — PCI firmware spec.{fn-pci-05} says how
-  * we assume the PC firmware
-  ** implements UEFI{fn-uefi-21}
-  ** has some ACPI tables{fn-uefi-21b} which report what features the underlying system has
-  *** `biefircate` will likely not support ACPI in its full generality; the spec. is extremely complex
-  * some PCs — but not all — allow bootloaders to access the firmware volume protocol;{fn-uefi-20} this can be used to discover some option ROMs
+  * big fluffy goal: boot and run some existing 16-/32-bit code originally meant for "legacy BIOS" systems, on a UEFI{fn-uefi-21} PC
+  * possible candidates are
+  ** simple PC booter programs, such as Maja Kądziołka's miniforth{fn-kadziolka-23}
+  ** programs that use a DOS extender{fn-hall-21}
+  ** FreeDOS{fn-hall-21b} itself
 
 ---
 
@@ -37,49 +26,36 @@
 :fn-krinkin-20: footnote:krinkin-20[M. Krinkin.  Loading an ELF image from EFI.  ./ Welcome to the Mike's homepage!, November 2020.  Retrieved on 14 October 2023.  https://krinkinmu.github.io/2020/11/15/loading-elf-image.html.]
 :fn-tis-95: footnote:tis-95[TIS Committee.  Tool Interface Standard (TIS) Executable and Linking Format (ELF) Specification: Version 1.2.  May 1995.  http://refspecs.linuxbase.org/elf/elf.pdf.]
 
-  * stage 1 is for stuff that happens before exiting UEFI boot services; stage 2 is for stuff after that
-  ** other than the above, there are (currently) no hard and fast rules for delineating the two
-  * stage 2 is expected to take the form of an ELF-64 executable{fn-coutant-98}{fn-tis-95} for x86-64
-  * for now I merely co-opt Mike Krinkin's simple UEFI → ELF loader{fn-krinkin-20} for use as stage 1; might need to tweak it to pass extra info to stage 2
+  * "Muon" subproject (TBA!)
+  * "Macron" subproject (very much in progress!)
+  ** stage 1 is for stuff that happens before exiting UEFI boot services; stage 2 is for stuff after that
+  *** other than the above, there are (currently) no hard and fast rules for delineating the two
+  *** for now (`efi.krinkinmu/`) I merely co-opt Mike Krinkin's simple UEFI → ELF loader{fn-krinkin-20} for use as stage 1; I modify the code to pass extra info to stage 2
+  ** stage 2 (`macron2/`) takes the form of an ELF-64 executable{fn-coutant-98}{fn-tis-95} for x86-64
 
 ---
 
-=== Rough to-do list (?!?) for something approaching a "minimum viable product"
+=== Relevant standards (and "standards")
 
-:fn-bzt-20: footnote:bzt-23[Bzt et al.  GOP.  OSDev Wiki, 2023.  Retrieved on 14 October 2023.  https://wiki.osdev.org/index.php?title=GOP&oldid=28290.]
+:fn-brown-00: footnote:brown-00[Brown, Ralf.  The x86 Interrupt List.  16 July 2000.  http://www.cs.cmu.edu/~ralf/files.html.]
+:fn-uefi-21b: footnote:uefi-20b[UEFI Forum.  Advanced Configuration and Power Interface (ACPI) Specification: Version 6.4.  January 2021.  https://uefi.org/sites/default/files/resources/ACPI_Spec_6_4_Jan22.pdf.]
 
-  * ☐ Screen output
-  ** ☐ via VGA option ROM, if present
-  ** ☐ via framebuffer from UEFI bootloader{fn-bzt-20}
-  * ☐ Time-keeping — useful-to-have capability for interacting with other devices e.g. keyboard and storage (!)
-  ** ☐ via legacy PIT and/or CMOS RTC
-  ** ☐ via time stamp counter (`rdtsc`) or APIC timer, on a CPU
-  ** ☐ via HPET or ACPI timer, outside CPUs
-  * ☐ Keyboard input
-  ** ☐ via PS/2 keyboard
-  ** ☐ via USB keyboard emulating legacy PS/2 keyboard using SMI
-  *** ☐ EHCI
-  *** ☐ XHCI
-  ** ☐ via USB keyboard directly
-  * ☐ Storage drive I/O
+  * we assume the PC firmware
+  ** implements UEFI{fn-uefi-21}
+  ** has some ACPI tables{fn-uefi-21b} which report what features the underlying system has
+  * we need to implement some or all of the BIOS interrupts and parts of the BIOS data area described in RBIL{fn-brown-00}
 
 ---
 
 === Other notes
 
-:fn-abraham-20: footnote:abraham-20[https://github.com/eyalabraham/new-xt-bios.  Retrieved on 28 August 2021.]
 :fn-ibm-86: footnote:ibm-86[International Business Machines Corporation.  IBM: Personal Computer Hardware Reference Library: Technical Reference 6183355, pp. 5-14 et seq.  March 1986.  https://archive.org/details/bitsavers_ibmpcat618ferenceMar86_25829277/page/n245/mode/2up.]
-:fn-intel-97: footnote:intel-97[Intel Corporation.  MultiProcessor Specification: Version 1.4.  May 1997.]
 :fn-lunt-18: footnote:lunt-18[B. D. Lunt.  USB: The Universal Serial Bus.  April 2018.]
 :fn-lunt-22: footnote:lunt-22[https://github.com/fysnet/FYSOS.  Retrieved on 15 April 2022.]
 :fn-oconnor-22: footnote:oconnor-22[https://www.seabios.org/.  Retrieved on 15 April 2022.]
 
-  * UEFI stuff
-  ** **note:** boot services will be unavailable once bootloader calls `BS->ExitBootServices(, )`
-  *** _might_ be possible to implement a BIOS without exiting boot services, but this is non-trivial — UEFI expects to be in control of most system resources, incl. memory, page tables, and IRQs
   * how to correctly interface with PC hardware legacy-style
   ** IBM's published BIOS source code, e.g. PC AT BIOS listings from 1986,{fn-ibm-86} might be useful
-  ** also potentially useful is Eyal Abraham's `new-xt-bios`,{fn-abraham-20} a rewrite of the BIOS for an (older) PC XT with partially custom hardware (code is under an MIT License)
   * USB stuff — possibly useful are
   ** Forever Young Software's FYSOS code,{fn-lunt-22} a companion to their OS design book series, including a book on USB programming{fn-lunt-18}
   ** the SeaBIOS project{fn-oconnor-22}
