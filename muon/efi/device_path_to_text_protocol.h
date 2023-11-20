@@ -21,40 +21,23 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __EFI_BLOCK_IO_PROTOCOL_H__
-#define __EFI_BLOCK_IO_PROTOCOL_H__
+#ifndef __EFI_DEVICE_PATH_TO_TEXT_PROTOCOL_H__
+#define __EFI_DEVICE_PATH_TO_TEXT_PROTOCOL_H__
 
 #include "efi/types.h"
 
-#define EFI_BLOCK_IO_PROTOCOL_GUID \
-    { 0x964e5b21, 0x6459, 0x11d2, \
-      { 0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b } }
+#define EFI_DEVICE_PATH_TO_TEXT_PROTOCOL_GUID \
+    { 0x8b843e20, 0x8132, 0x4852, \
+      { 0x90, 0xcc, 0x55, 0x1a, 0x4e, 0x4a, 0x7f, 0x1c } }
 
-typedef uint64_t efi_lba_t;
-
-struct efi_block_io_media
+struct efi_device_path_to_text_protocol
 {
-  uint32_t media_id;
-  efi_boolean_t removable_media;
-  efi_boolean_t media_present;
-  efi_boolean_t logical_partition;
-  efi_boolean_t read_only;
-  efi_boolean_t write_caching;
-  uint32_t block_size;
-  uint32_t io_align;
-  efi_lba_t last_block;
-};
-
-struct efi_block_io_protocol
-{
-  uint64_t revision;
-  struct efi_block_io_media *media;
-  efi_status_t (*reset) (struct efi_block_io_protocol *, efi_boolean_t);
-  efi_status_t (*read_blocks) (struct efi_block_io_protocol *,
-			       uint32_t, efi_lba_t, uint64_t, void *);
-  efi_status_t (*write_blocks) (struct efi_block_io_protocol *,
-			        uint32_t, efi_lba_t, uint64_t, const void *);
-  efi_status_t (*flush_blocks) (struct efi_block_io_protocol *);
+  uint16_t *(*convert_device_node_to_text)
+	      (const struct efi_device_path_protocol *,
+	       efi_boolean_t, efi_boolean_t);
+  uint16_t *(*convert_device_path_to_text)
+	      (const struct efi_device_path_protocol *,
+	       efi_boolean_t, efi_boolean_t);
 };
 
 #endif

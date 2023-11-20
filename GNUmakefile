@@ -60,9 +60,9 @@ ifneq "" "$(SBSIGN_MOK)"
 	       --output $@ $<
 endif
 
-$(MUON_UNSIGNED): muon/main.o muon/clib.o muon/log.o
+$(MUON_UNSIGNED): muon/main.o muon/boot-dev.o muon/clib.o muon/log.o
 	$(LD) -flavor link -subsystem:efi_application -entry:efi_main \
-	      -out:$@ $^
+	      -filealign:16 -out:$@ $^
 
 $(MACRON1_UNSIGNED): $(EFISRCDEPS)
 	$(RM) -r efi.build
