@@ -1,6 +1,6 @@
 [submodule "lolwutconf"]
 	path = lolwutconf
-	url = https://gitlab.com/tkchia/lolwutconf.git
+	url = https://codeberg.org/tkchia/lolwutconf.git
 [submodule "xv6"]
 	path = xv6
 	url = https://github.com/mit-pdos/xv6-public.git
@@ -9,7 +9,7 @@
 	url = https://github.com/managarm/lai.git
 [submodule "efi.krinkinmu"]
 	path = efi.krinkinmu
-	url = https://gitlab.com/tkchia/efi.krinkinmu.git
+	url = https://codeberg.org/tkchia/efi.krinkinmu.git
 [submodule "picolibc"]
 	path = picolibc
 	url = https://github.com/picolibc/picolibc.git
